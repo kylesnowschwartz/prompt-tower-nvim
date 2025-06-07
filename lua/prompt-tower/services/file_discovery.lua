@@ -54,11 +54,11 @@ local function _scan_recursive(parent_node, current_depth, max_depth, ignore_pat
       goto continue
     end
 
-    -- Check file size limits for files
+    -- Check file size limits for files (mark as size_exceeded but don't skip)
     if child_node:is_file() then
       local max_size_bytes = config.get_value('max_file_size_kb') * 1024
       if child_node.size > max_size_bytes then
-        goto continue
+        child_node.size_exceeded = true
       end
     end
 

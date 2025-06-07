@@ -358,7 +358,7 @@ describe('template_engine', function()
       -- Switch to XML format
       config.set_current_format('xml')
 
-      local nodes = { file_node.new(test_files.main_lua) }
+      local nodes = { file_node.new({ path = test_files.main_lua }) }
       local template_config = config.get_template_config()
       local context = template_engine.generate_context(nodes, test_dir, template_config)
 
@@ -378,7 +378,7 @@ describe('template_engine', function()
       -- Switch to Markdown format
       config.set_current_format('markdown')
 
-      local nodes = { file_node.new(test_files.main_lua) }
+      local nodes = { file_node.new({ path = test_files.main_lua }) }
       local template_config = config.get_template_config()
       local context = template_engine.generate_context(nodes, test_dir, template_config)
 
@@ -398,7 +398,7 @@ describe('template_engine', function()
       -- Switch to Minimal format
       config.set_current_format('minimal')
 
-      local nodes = { file_node.new(test_files.main_lua) }
+      local nodes = { file_node.new({ path = test_files.main_lua }) }
       local template_config = config.get_template_config()
       local context = template_engine.generate_context(nodes, test_dir, template_config)
 
@@ -415,7 +415,7 @@ describe('template_engine', function()
         },
       })
 
-      local nodes = { file_node.new(test_files.main_lua) }
+      local nodes = { file_node.new({ path = test_files.main_lua }) }
       local template_config = config.get_template_config()
       local context = template_engine.generate_context(nodes, test_dir, template_config)
 
@@ -462,7 +462,7 @@ describe('template_engine', function()
         },
       })
 
-      local nodes = { file_node.new(test_files.main_lua) }
+      local nodes = { file_node.new({ path = test_files.main_lua }) }
       local template_config = config.get_template_config()
       local context = template_engine.generate_context(nodes, test_dir, template_config)
 
@@ -485,8 +485,8 @@ describe('template_engine', function()
       })
 
       local nodes = {
-        file_node.new(test_files.main_lua),
-        file_node.new(test_files.readme_md),
+        file_node.new({ path = test_files.main_lua }),
+        file_node.new({ path = test_files.readme_md }),
       }
       local template_config = config.get_template_config()
       local context = template_engine.generate_context(nodes, test_dir, template_config)
@@ -508,7 +508,7 @@ describe('template_engine', function()
         },
       })
 
-      local nodes = { file_node.new(test_files.main_lua) }
+      local nodes = { file_node.new({ path = test_files.main_lua }) }
       local template_config = config.get_template_config()
       local context = template_engine.generate_context(nodes, test_dir, template_config)
 

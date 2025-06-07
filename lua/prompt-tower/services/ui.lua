@@ -59,6 +59,7 @@ local function setup_devicons()
   -- Setup highlight groups
   vim.api.nvim_set_hl(0, 'LirDir', { link = 'Directory' })
   vim.api.nvim_set_hl(0, 'PromptTowerSelected', { bg = '#3d4220', fg = '#a6da95' })
+  vim.api.nvim_set_hl(0, 'PromptTowerOversized', { fg = '#ed8796', bold = true })
 
   return true
 end
@@ -113,6 +114,11 @@ local function update_tree_highlights(line_data)
     -- Highlight selected files
     if line_info.is_selected then
       vim.api.nvim_buf_add_highlight(state.buffers.tree, devicons_ns, 'PromptTowerSelected', i - 1, 0, -1)
+    end
+
+    -- Highlight oversized files in red
+    if line_info.is_oversized then
+      vim.api.nvim_buf_add_highlight(state.buffers.tree, devicons_ns, 'PromptTowerOversized', i - 1, 0, -1)
     end
   end
 end
@@ -458,9 +464,19 @@ function M.refresh_tree()
       end
 
       local display_name = node.name .. selected_mark
+
+      -- Add size indicator for oversized files
+      local size_indicator = ''
+      local is_oversized = false
+      if node:is_file() and node.size_exceeded then
+        local size_kb = math.floor(node.size / 1024)
+        size_indicator = string.format(' [%dKB - TOO LARGE]', size_kb)
+        is_oversized = true
+      end
+
       -- Add spacing like lir.nvim (adapted from lir's readdir function)
       local prefix_space = ' ' -- Space for better cursor appearance
-      local line = prefix_space .. line_prefix .. icon .. ' ' .. display_name
+      local line = prefix_space .. line_prefix .. icon .. ' ' .. display_name .. size_indicator
 
       table.insert(state.tree_lines, {
         text = line,
@@ -468,6 +484,7 @@ function M.refresh_tree()
         depth = depth,
         is_directory = node:is_directory(),
         is_selected = is_selected,
+        is_oversized = is_oversized,
         icon = icon,
         icon_highlight = icon_highlight,
       })
@@ -593,10 +610,20 @@ function M.tree_open_or_select()
     node.expanded = not node.expanded
     M.refresh_tree()
   else
-    -- For files: toggle selection
-    workspace.toggle_file_selection(node.path)
-    M.refresh_tree()
-    M.refresh_selection()
+    -- For files: check if oversized before toggling selection
+    if node.size_exceeded then
+      local size_kb = math.floor(node.size / 1024)
+      local max_size_kb = config.get_value('max_file_size_kb')
+      vim.notify(
+        string.format('Cannot select "%s" - file size (%dKB) exceeds limit (%dKB)', node.name, size_kb, max_size_kb),
+        vim.log.levels.WARN
+      )
+    else
+      -- For normal files: toggle selection
+      workspace.toggle_file_selection(node.path)
+      M.refresh_tree()
+      M.refresh_selection()
+    end
   end
 end
 
@@ -627,10 +654,20 @@ function M.tree_toggle_node()
     M.refresh_tree()
     M.refresh_selection()
   else
-    -- For files: toggle selection
-    workspace.toggle_file_selection(node.path)
-    M.refresh_tree()
-    M.refresh_selection()
+    -- For files: check if oversized before toggling selection
+    if node.size_exceeded then
+      local size_kb = math.floor(node.size / 1024)
+      local max_size_kb = config.get_value('max_file_size_kb')
+      vim.notify(
+        string.format('Cannot select "%s" - file size (%dKB) exceeds limit (%dKB)', node.name, size_kb, max_size_kb),
+        vim.log.levels.WARN
+      )
+    else
+      -- For normal files: toggle selection
+      workspace.toggle_file_selection(node.path)
+      M.refresh_tree()
+      M.refresh_selection()
+    end
   end
 end
 
@@ -777,6 +814,10 @@ function M.show_help()
     '  ✓         Selected file',
     '  ◐         Partially selected dir',
     '  ⬜        Fully selected dir',
+    '',
+    'File Status:',
+    '  Red text  Oversized file (cannot select)',
+    '  [XKB - TOO LARGE]  Size indicator',
     '',
     'Press any key to close help...',
   }

@@ -288,6 +288,11 @@ function M.select_file(file_path)
     return false
   end
 
+  -- Don't allow selection of oversized files
+  if file_node.size_exceeded then
+    return false
+  end
+
   state.selected_files[file_path] = file_node
   file_node:set_selected(true)
 

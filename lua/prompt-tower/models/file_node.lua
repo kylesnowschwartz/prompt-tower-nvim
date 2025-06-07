@@ -228,8 +228,8 @@ end
 function M:set_selected_recursive(selected)
   vim.validate('selected', selected, 'boolean')
 
-  -- Set selection for this node (if it's a file)
-  if self:is_file() then
+  -- Set selection for this node (if it's a file and not oversized)
+  if self:is_file() and not self.size_exceeded then
     self.selected = selected
   end
 
