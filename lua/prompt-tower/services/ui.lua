@@ -36,6 +36,7 @@ local state = {
   current_tree_node = nil,
   tree_lines = {},
   cursor_line = 1,
+  current_focus_index = 1, -- Track which window is currently focused (1=tree, 2=selection, 3=top_text, 4=bottom_text)
 }
 
 --- Setup devicons and highlight groups (adapted from lir.nvim)
@@ -243,6 +244,11 @@ local function create_windows()
     title = ' Context (Top) ',
   })
 
+  -- Set top text window options
+  vim.api.nvim_win_set_option(state.windows.top_text, 'number', false)
+  vim.api.nvim_win_set_option(state.windows.top_text, 'relativenumber', false)
+  vim.api.nvim_win_set_option(state.windows.top_text, 'signcolumn', 'no')
+
   -- Bottom text window (right bottom) - matches selection width
   state.windows.bottom_text = create_float_win(state.buffers.bottom_text, {
     row = text_start_row,
@@ -251,6 +257,11 @@ local function create_windows()
     height = layout.text_input_height,
     title = ' Context (Bottom) ',
   })
+
+  -- Set bottom text window options
+  vim.api.nvim_win_set_option(state.windows.bottom_text, 'number', false)
+  vim.api.nvim_win_set_option(state.windows.bottom_text, 'relativenumber', false)
+  vim.api.nvim_win_set_option(state.windows.bottom_text, 'signcolumn', 'no')
 end
 
 --- Set up key mappings for UI buffers
@@ -281,6 +292,8 @@ local function setup_keymaps()
   -- Navigation
   map(state.buffers.tree, 'n', 'j', M.tree_move_down, 'Move down')
   map(state.buffers.tree, 'n', 'k', M.tree_move_up, 'Move up')
+  map(state.buffers.tree, 'n', '<Tab>', M.cycle_focus, 'Cycle to next window')
+  map(state.buffers.tree, 'n', '<S-Tab>', M.cycle_focus_reverse, 'Cycle to previous window')
 
   -- Utility
   map(state.buffers.tree, 'n', 'R', M.refresh_tree, 'Refresh tree')
@@ -291,12 +304,18 @@ local function setup_keymaps()
   -- Selection buffer mappings
   map(state.buffers.selection, 'n', '<CR>', M.remove_from_selection, 'Remove from selection')
   map(state.buffers.selection, 'n', 'd', M.remove_from_selection, 'Remove from selection')
+  map(state.buffers.selection, 'n', '<Tab>', M.cycle_focus, 'Cycle to next window')
+  map(state.buffers.selection, 'n', '<S-Tab>', M.cycle_focus_reverse, 'Cycle to previous window')
   map(state.buffers.selection, 'n', 'q', M.close_ui, 'Close UI')
   map(state.buffers.selection, 'n', '<C-g>', M.generate_prompt, 'Generate prompt')
 
   -- Text buffer mappings
+  map(state.buffers.top_text, 'n', '<Tab>', M.cycle_focus, 'Cycle to next window')
+  map(state.buffers.top_text, 'n', '<S-Tab>', M.cycle_focus_reverse, 'Cycle to previous window')
   map(state.buffers.top_text, 'n', 'q', M.close_ui, 'Close UI')
   map(state.buffers.top_text, 'n', '<C-g>', M.generate_prompt, 'Generate prompt')
+  map(state.buffers.bottom_text, 'n', '<Tab>', M.cycle_focus, 'Cycle to next window')
+  map(state.buffers.bottom_text, 'n', '<S-Tab>', M.cycle_focus_reverse, 'Cycle to previous window')
   map(state.buffers.bottom_text, 'n', 'q', M.close_ui, 'Close UI')
   map(state.buffers.bottom_text, 'n', '<C-g>', M.generate_prompt, 'Generate prompt')
 end
@@ -710,7 +729,11 @@ function M.show_help()
     'Prompt Tower - Key Bindings',
     '════════════════════════════',
     '',
-    'Navigation:',
+    'Window Navigation:',
+    '  <Tab>     Cycle to next window',
+    '  <S-Tab>   Cycle to previous window',
+    '',
+    'Tree Navigation:',
     '  j/k       Move up/down',
     '  <Enter>   Open/Select item',
     '  <Space>   Toggle node selection',
@@ -788,6 +811,52 @@ function M.show_help()
     end,
     once = true,
   })
+end
+
+--- Cycle focus between UI windows (Tab functionality)
+function M.cycle_focus()
+  if not state.is_open then
+    return
+  end
+
+  -- Define window order: tree -> selection -> top_text -> bottom_text -> repeat
+  local windows_order = { 'tree', 'selection', 'top_text', 'bottom_text' }
+
+  -- Move to next window
+  state.current_focus_index = state.current_focus_index + 1
+  if state.current_focus_index > #windows_order then
+    state.current_focus_index = 1
+  end
+
+  local next_window_name = windows_order[state.current_focus_index]
+  local next_window = state.windows[next_window_name]
+
+  if next_window and vim.api.nvim_win_is_valid(next_window) then
+    vim.api.nvim_set_current_win(next_window)
+  end
+end
+
+--- Cycle focus in reverse direction (Shift+Tab functionality)
+function M.cycle_focus_reverse()
+  if not state.is_open then
+    return
+  end
+
+  -- Define window order: tree -> selection -> top_text -> bottom_text -> repeat
+  local windows_order = { 'tree', 'selection', 'top_text', 'bottom_text' }
+
+  -- Move to previous window
+  state.current_focus_index = state.current_focus_index - 1
+  if state.current_focus_index < 1 then
+    state.current_focus_index = #windows_order
+  end
+
+  local prev_window_name = windows_order[state.current_focus_index]
+  local prev_window = state.windows[prev_window_name]
+
+  if prev_window and vim.api.nvim_win_is_valid(prev_window) then
+    vim.api.nvim_set_current_win(prev_window)
+  end
 end
 
 --- Legacy function for backward compatibility
@@ -931,6 +1000,7 @@ function M._reset_state()
     current_tree_node = nil,
     tree_lines = {},
     cursor_line = 1,
+    current_focus_index = 1,
   }
 end
 

@@ -1,9 +1,9 @@
 -- tests/services/tree_generator_spec.lua
 -- Tests for the tree generator service
 
-local tree_generator = require('prompt-tower.services.tree_generator')
 local FileNode = require('prompt-tower.models.file_node')
 local config = require('prompt-tower.config')
+local tree_generator = require('prompt-tower.services.tree_generator')
 
 describe('tree_generator', function()
   before_each(function()
@@ -111,7 +111,7 @@ describe('tree_generator', function()
       -- Select specific files (need to check array indices)
       local readme_file = nil
       local src_dir = nil
-      
+
       for _, child in ipairs(root_node.children) do
         if child.name == 'README.md' then
           readme_file = child
@@ -119,10 +119,10 @@ describe('tree_generator', function()
           src_dir = child
         end
       end
-      
+
       assert.is_not_nil(readme_file)
       assert.is_not_nil(src_dir)
-      
+
       readme_file.selected = true
       if src_dir and src_dir.children and #src_dir.children > 0 then
         for _, child in ipairs(src_dir.children) do
@@ -210,7 +210,12 @@ describe('tree_generator', function()
         if string.find(line, '/') and string.find(line, '%(') then
           -- This is a directory line
           found_dir = true
-        elseif found_dir and not string.find(line, '/') and not string.find(line, '│') and not string.find(line, '   ') then
+        elseif
+          found_dir
+          and not string.find(line, '/')
+          and not string.find(line, '│')
+          and not string.find(line, '   ')
+        then
           -- This is a file line after we found a directory (at same level)
           files_before_dirs = false
           break
@@ -300,7 +305,7 @@ describe('tree_generator', function()
       assert.is_true(string.find(tree, '%[1 KB%]') ~= nil)
       assert.is_true(string.find(tree, '%[2 MB%]') ~= nil)
       assert.is_true(string.find(tree, '%[0 KB%]') ~= nil)
-      
+
       -- Should not have decimal places
       assert.is_false(string.find(tree, '%[%d+%.%d+ KB%]') ~= nil)
       assert.is_false(string.find(tree, '%[%d+%.%d+ MB%]') ~= nil)
