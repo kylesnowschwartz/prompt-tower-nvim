@@ -371,40 +371,7 @@ prompt-tower-nvim/
 
 ## Roadmap
 
-### Phase 1: MVP ✅
-
-- [x] Basic plugin structure
-- [x] Configuration system
-- [x] File selection commands
-- [x] Basic context generation
-- [x] Test framework
-
-### Phase 2: Core Features ✅
-
-- [x] File discovery service with ignore patterns
-- [x] Project tree generation with multiple formats
-- [x] Template system with XML, Markdown, and Minimal formats
-- [x] Template hot-swapping
-- [x] Workspace detection and management
-- [x] File node model with metadata
-- [x] .towerignore support
-
-### Phase 3: Enhanced UI ✅
-
-- [x] Floating window UI interface
-- [x] Keyboard-driven file selection
-- [x] Visual tree display
-- [x] Help system
-- [x] Configurable keymaps
-
-### Phase 4: Advanced Features (In Progress)
-
-- [x] Token counting and estimation
-- [x] Performance optimizations with lazy loading
-- [ ] Telescope integration
-- [ ] GitHub issues integration
-- [ ] Multi-workspace support
-- [ ] AI provider integration
+See [ROADMAP.md](ROADMAP.md) for detailed development plans and feature parity tracking.
 
 ## Contributing
 
