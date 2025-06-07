@@ -177,8 +177,8 @@ describe('prompt-tower.init', function()
       prompt_tower.generate_context()
 
       local state = prompt_tower._get_state()
-      -- Check for new template format structure
-      assert.is_true(string.find(state.last_context, '<file name="README" path="README.md">') ~= nil)
+      -- Check for VSCode-compatible template format structure
+      assert.is_true(string.find(state.last_context, '<file name="README.md" path="README.md">') ~= nil)
       assert.is_true(string.find(state.last_context, '</file>') ~= nil)
     end)
   end)

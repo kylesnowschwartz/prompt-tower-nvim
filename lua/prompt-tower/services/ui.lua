@@ -591,8 +591,11 @@ function M.generate_prompt()
   local current_workspace = workspace.get_current_workspace()
   local template_config = config.get_template_config()
 
+  -- Get root node for tree generation
+  local root_node = workspace.get_file_tree(current_workspace)
+
   -- Generate context using template engine
-  local context = template_engine.generate_context(selected_files, current_workspace, template_config)
+  local context = template_engine.generate_context(selected_files, current_workspace, template_config, root_node)
 
   -- Get custom text from input buffers
   local top_text_lines = vim.api.nvim_buf_get_lines(state.buffers.top_text, 0, -1, false)

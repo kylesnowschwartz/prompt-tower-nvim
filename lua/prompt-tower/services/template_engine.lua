@@ -1,6 +1,9 @@
 -- lua/prompt-tower/services/template_engine.lua
 -- Template engine for generating formatted context output
 
+local config = require('prompt-tower.config')
+local tree_generator = require('prompt-tower.services.tree_generator')
+
 local M = {}
 
 --- Replace placeholders in a template string
@@ -45,8 +48,9 @@ end
 --- @param selected_files table List of selected file nodes
 --- @param workspace_root string? Current workspace root
 --- @param template_config table Template configuration
+--- @param root_node table? Root node for tree generation
 --- @return string Formatted context
-function M.generate_context(selected_files, workspace_root, template_config)
+function M.generate_context(selected_files, workspace_root, template_config, root_node)
   vim.validate('selected_files', selected_files, 'table')
   vim.validate('template_config', template_config, 'table')
 
@@ -70,13 +74,29 @@ function M.generate_context(selected_files, workspace_root, template_config)
   -- Combine file blocks with separator
   local combined_blocks = table.concat(file_blocks, template_config.separator)
 
+  -- Generate project tree if enabled and root_node is provided
+  local tree_block = ''
+  local project_tree_config = config.get_value('project_tree')
+  if project_tree_config and project_tree_config.enabled and root_node then
+    local project_tree = tree_generator.generate_project_tree(root_node, {
+      base_path = workspace_root,
+    })
+
+    if project_tree and project_tree ~= '' then
+      -- Apply tree template if configured
+      local tree_template = project_tree_config.template or '{projectTree}'
+      tree_block = replace_placeholders(tree_template, { projectTree = project_tree })
+    end
+  end
+
   -- Apply wrapper template
   local wrapper_placeholders = {
     fileBlocks = combined_blocks,
     fileCount = #selected_files,
     timestamp = os.date('%Y-%m-%d %H:%M:%S'),
     workspaceRoot = workspace_root or 'Unknown',
-    treeBlock = '', -- Will be populated when tree generation is implemented
+    treeBlock = tree_block,
+    projectTree = root_node and tree_generator.generate_project_tree(root_node, { base_path = workspace_root }) or '',
   }
 
   local final_context = replace_placeholders(template_config.wrapper_template, wrapper_placeholders)
