@@ -223,6 +223,72 @@ function M:set_selected(selected)
   self.selected = selected
 end
 
+--- Recursively select/deselect this node and all descendants
+--- @param selected boolean Whether to select or deselect
+function M:set_selected_recursive(selected)
+  vim.validate('selected', selected, 'boolean')
+
+  -- Set selection for this node (if it's a file)
+  if self:is_file() then
+    self.selected = selected
+  end
+
+  -- Recursively set selection for all children
+  for _, child in ipairs(self.children) do
+    child:set_selected_recursive(selected)
+  end
+end
+
+--- Get selection state of directory considering children
+--- @return string One of: 'none', 'partial', 'all'
+function M:get_selection_state()
+  if self:is_file() then
+    return self.selected and 'all' or 'none'
+  end
+
+  -- For directories, check children
+  local all_files = self:get_all_files()
+  if #all_files == 0 then
+    return 'none'
+  end
+
+  local selected_count = 0
+  for _, file in ipairs(all_files) do
+    if file.selected then
+      selected_count = selected_count + 1
+    end
+  end
+
+  if selected_count == 0 then
+    return 'none'
+  elseif selected_count == #all_files then
+    return 'all'
+  else
+    return 'partial'
+  end
+end
+
+--- Select all descendants (files only)
+function M:select_recursive()
+  self:set_selected_recursive(true)
+end
+
+--- Deselect all descendants (files only)
+function M:deselect_recursive()
+  self:set_selected_recursive(false)
+end
+
+--- Toggle recursive selection
+--- If fully selected, deselect all. If partially or not selected, select all.
+function M:toggle_recursive_selection()
+  local state = self:get_selection_state()
+  if state == 'all' then
+    self:deselect_recursive()
+  else
+    self:select_recursive()
+  end
+end
+
 --- Convert to string representation for debugging
 --- @return string String representation
 function M:to_string()

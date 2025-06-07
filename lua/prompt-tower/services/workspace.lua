@@ -281,6 +281,115 @@ function M.select_file(file_path)
   return true
 end
 
+--- Select a directory and all its files recursively
+--- @param dir_path string Directory path to select
+--- @return boolean Success
+function M.select_directory_recursive(dir_path)
+  vim.validate('dir_path', dir_path, 'string')
+
+  -- Ensure workspace is scanned
+  local current_workspace = state.current_workspace
+  if current_workspace and not state.file_trees[current_workspace] then
+    M.scan_workspace(current_workspace)
+  end
+
+  -- Find the directory node
+  local dir_node = M.find_file_node(dir_path)
+  if not dir_node then
+    return false
+  end
+
+  -- Only work with directories
+  if not dir_node:is_directory() then
+    return false
+  end
+
+  -- Select all files in the directory recursively
+  dir_node:select_recursive()
+
+  -- Update selected_files tracking
+  local all_files = dir_node:get_all_files()
+  for _, file in ipairs(all_files) do
+    state.selected_files[file.path] = file
+  end
+
+  return true
+end
+
+--- Deselect a directory and all its files recursively
+--- @param dir_path string Directory path to deselect
+--- @return boolean Success
+function M.deselect_directory_recursive(dir_path)
+  vim.validate('dir_path', dir_path, 'string')
+
+  -- Find the directory node
+  local dir_node = M.find_file_node(dir_path)
+  if not dir_node then
+    return false
+  end
+
+  -- Only work with directories
+  if not dir_node:is_directory() then
+    return false
+  end
+
+  -- Deselect all files in the directory recursively
+  dir_node:deselect_recursive()
+
+  -- Update selected_files tracking
+  local all_files = dir_node:get_all_files()
+  for _, file in ipairs(all_files) do
+    state.selected_files[file.path] = nil
+  end
+
+  return true
+end
+
+--- Toggle directory selection recursively
+--- @param dir_path string Directory path to toggle
+--- @return boolean New selection state (true if now selected)
+function M.toggle_directory_selection(dir_path)
+  vim.validate('dir_path', dir_path, 'string')
+
+  -- Find the directory node
+  local dir_node = M.find_file_node(dir_path)
+  if not dir_node then
+    return false
+  end
+
+  -- Only work with directories
+  if not dir_node:is_directory() then
+    return false
+  end
+
+  -- Get current selection state and toggle accordingly
+  local selection_state = dir_node:get_selection_state()
+
+  if selection_state == 'all' then
+    -- Fully selected, so deselect all
+    M.deselect_directory_recursive(dir_path)
+    return false
+  else
+    -- Partially or not selected, so select all
+    M.select_directory_recursive(dir_path)
+    return true
+  end
+end
+
+--- Get directory selection state
+--- @param dir_path string Directory path to check
+--- @return string One of: 'none', 'partial', 'all', or 'not_found'
+function M.get_directory_selection_state(dir_path)
+  vim.validate('dir_path', dir_path, 'string')
+
+  local dir_node = M.find_file_node(dir_path)
+  if not dir_node then
+    return 'not_found'
+  end
+
+  return dir_node:get_selection_state()
+end
+
 --- Deselect a file
 --- @param file_path string File path to deselect
 --- @return boolean Success

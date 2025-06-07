@@ -264,12 +264,27 @@ local function setup_keymaps()
     })
   end
 
-  -- Tree buffer mappings
-  map(state.buffers.tree, 'n', '<CR>', M.tree_select_file, 'Select/Toggle file')
-  map(state.buffers.tree, 'n', '<Space>', M.tree_select_file, 'Select/Toggle file')
-  map(state.buffers.tree, 'n', 'o', M.tree_toggle_folder, 'Toggle folder')
+  -- Tree buffer mappings (NeoTree-inspired)
+  -- Primary actions
+  map(state.buffers.tree, 'n', '<CR>', M.tree_open_or_select, 'Open/Select item')
+  map(state.buffers.tree, 'n', '<Space>', M.tree_toggle_node, 'Toggle node selection')
+
+  -- Directory operations
+  map(state.buffers.tree, 'n', 'C', M.tree_close_node, 'Close directory')
+  map(state.buffers.tree, 'n', 'z', M.tree_close_all_nodes, 'Close all directories')
+
+  -- Selection operations
+  map(state.buffers.tree, 'n', 'a', M.tree_select_all_in_dir, 'Select all in directory')
+  map(state.buffers.tree, 'n', 'A', M.tree_select_all_recursive, 'Select all recursively')
+  map(state.buffers.tree, 'n', 'x', M.tree_clear_selection, 'Clear all selections')
+
+  -- Navigation
   map(state.buffers.tree, 'n', 'j', M.tree_move_down, 'Move down')
   map(state.buffers.tree, 'n', 'k', M.tree_move_up, 'Move up')
+
+  -- Utility
+  map(state.buffers.tree, 'n', 'R', M.refresh_tree, 'Refresh tree')
+  map(state.buffers.tree, 'n', '?', M.show_help, 'Show help')
   map(state.buffers.tree, 'n', 'q', M.close_ui, 'Close UI')
   map(state.buffers.tree, 'n', '<C-g>', M.generate_prompt, 'Generate prompt')
 
@@ -379,10 +394,23 @@ function M.refresh_tree()
     if depth > 0 then -- Skip root node in display
       local icon, icon_highlight = get_file_icon(node.name, node:is_directory())
       local selected_mark = ''
+      local is_selected = false
 
-      -- For files, show selection status
-      if not node:is_directory() then
-        selected_mark = workspace.is_file_selected(node.path) and ' ✓' or ''
+      if node:is_directory() then
+        -- For directories, show selection state
+        local selection_state = workspace.get_directory_selection_state(node.path)
+        if selection_state == 'all' then
+          selected_mark = ' ⬜' -- Fully selected
+          is_selected = true
+        elseif selection_state == 'partial' then
+          selected_mark = ' ◐' -- Partially selected
+          is_selected = true
+        end
+        -- No mark for 'none' state
+      else
+        -- For files, show selection status
+        is_selected = workspace.is_file_selected(node.path)
+        selected_mark = is_selected and ' ✓' or ''
       end
 
       local line_prefix = prefix
@@ -400,7 +428,7 @@ function M.refresh_tree()
         node = node,
         depth = depth,
         is_directory = node:is_directory(),
-        is_selected = workspace.is_file_selected(node.path),
+        is_selected = is_selected,
         icon = icon,
         icon_highlight = icon_highlight,
       })
@@ -500,8 +528,9 @@ function M.tree_move_up()
   vim.api.nvim_win_set_cursor(state.windows.tree, { state.cursor_line, 0 })
 end
 
---- Handle tree selection/toggle
-function M.tree_select_file()
+--- Handle tree open/select (Enter key - NeoTree style)
+--- Files: Toggle selection, Directories: Expand/collapse
+function M.tree_open_or_select()
   if #state.tree_lines == 0 then
     return
   end
@@ -521,13 +550,249 @@ function M.tree_select_file()
   local node = line_data.node
 
   if node:is_directory() then
-    M.tree_toggle_folder()
+    -- For directories: expand/collapse
+    node.expanded = not node.expanded
+    M.refresh_tree()
   else
-    -- Toggle file selection
+    -- For files: toggle selection
     workspace.toggle_file_selection(node.path)
     M.refresh_tree()
     M.refresh_selection()
   end
+end
+
+--- Handle tree node toggle (Space key - NeoTree style)
+--- Files: Toggle selection, Directories: Toggle recursive selection
+function M.tree_toggle_node()
+  if #state.tree_lines == 0 then
+    return
+  end
+
+  -- Get actual cursor position from window to handle user navigation
+  local cursor_pos = vim.api.nvim_win_get_cursor(state.windows.tree)
+  local actual_line = cursor_pos[1]
+
+  -- Update our tracked position
+  state.cursor_line = actual_line
+
+  if actual_line > #state.tree_lines then
+    return
+  end
+
+  local line_data = state.tree_lines[actual_line]
+  local node = line_data.node
+
+  if node:is_directory() then
+    -- For directories: toggle recursive selection
+    workspace.toggle_directory_selection(node.path)
+    M.refresh_tree()
+    M.refresh_selection()
+  else
+    -- For files: toggle selection
+    workspace.toggle_file_selection(node.path)
+    M.refresh_tree()
+    M.refresh_selection()
+  end
+end
+
+--- Close current directory node (C key)
+function M.tree_close_node()
+  if #state.tree_lines == 0 then
+    return
+  end
+
+  -- Get actual cursor position from window to handle user navigation
+  local cursor_pos = vim.api.nvim_win_get_cursor(state.windows.tree)
+  local actual_line = cursor_pos[1]
+
+  -- Update our tracked position
+  state.cursor_line = actual_line
+
+  if actual_line > #state.tree_lines then
+    return
+  end
+
+  local line_data = state.tree_lines[actual_line]
+  local node = line_data.node
+
+  if node:is_directory() and node.expanded then
+    node.expanded = false
+    M.refresh_tree()
+  end
+end
+
+--- Close all directory nodes (z key)
+function M.tree_close_all_nodes()
+  local current_workspace = workspace.get_current_workspace()
+  if not current_workspace then
+    return
+  end
+
+  local file_tree = workspace.get_file_tree(current_workspace)
+  if not file_tree then
+    return
+  end
+
+  -- Recursively close all directories
+  local function close_all_recursive(node)
+    if node:is_directory() then
+      node.expanded = false
+      for _, child in ipairs(node.children) do
+        close_all_recursive(child)
+      end
+    end
+  end
+
+  close_all_recursive(file_tree)
+  M.refresh_tree()
+end
+
+--- Select all files in current directory (a key)
+function M.tree_select_all_in_dir()
+  if #state.tree_lines == 0 then
+    return
+  end
+
+  -- Get actual cursor position from window to handle user navigation
+  local cursor_pos = vim.api.nvim_win_get_cursor(state.windows.tree)
+  local actual_line = cursor_pos[1]
+
+  if actual_line > #state.tree_lines then
+    return
+  end
+
+  local line_data = state.tree_lines[actual_line]
+  local node = line_data.node
+
+  -- Get the parent directory
+  local target_dir = node:is_directory() and node or node.parent
+
+  if target_dir then
+    -- Select all files in the target directory (non-recursive)
+    for _, child in ipairs(target_dir.children) do
+      if child:is_file() then
+        workspace.select_file(child.path)
+      end
+    end
+    M.refresh_tree()
+    M.refresh_selection()
+  end
+end
+
+--- Select all files recursively (A key)
+function M.tree_select_all_recursive()
+  local current_workspace = workspace.get_current_workspace()
+  if not current_workspace then
+    return
+  end
+
+  local file_tree = workspace.get_file_tree(current_workspace)
+  if not file_tree then
+    return
+  end
+
+  -- Select all files in the entire tree
+  workspace.select_directory_recursive(file_tree.path)
+  M.refresh_tree()
+  M.refresh_selection()
+end
+
+--- Clear all selections (x key)
+function M.tree_clear_selection()
+  workspace.clear_selections()
+  M.refresh_tree()
+  M.refresh_selection()
+end
+
+--- Show help window (? key)
+function M.show_help()
+  local help_lines = {
+    'Prompt Tower - Key Bindings',
+    '════════════════════════════',
+    '',
+    'Navigation:',
+    '  j/k       Move up/down',
+    '  <Enter>   Open/Select item',
+    '  <Space>   Toggle node selection',
+    '',
+    'Directory Operations:',
+    '  C         Close directory',
+    '  z         Close all directories',
+    '',
+    'Selection Operations:',
+    '  a         Select all in directory',
+    '  A         Select all recursively',
+    '  x         Clear all selections',
+    '',
+    'Utility:',
+    '  R         Refresh tree',
+    '  ?         Show this help',
+    '  q         Close UI',
+    '  <C-g>     Generate prompt',
+    '',
+    'Selection Indicators:',
+    '  ✓         Selected file',
+    '  ◐         Partially selected dir',
+    '  ⬜        Fully selected dir',
+    '',
+    'Press any key to close help...',
+  }
+
+  -- Create help buffer
+  local help_buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_option(help_buf, 'bufhidden', 'wipe')
+  vim.api.nvim_buf_set_option(help_buf, 'filetype', 'prompt-tower-help')
+  vim.api.nvim_buf_set_lines(help_buf, 0, -1, false, help_lines)
+
+  -- Calculate centered position
+  local ui_width = vim.o.columns
+  local ui_height = vim.o.lines
+  local width = math.min(50, ui_width - 4)
+  local height = math.min(#help_lines + 2, ui_height - 4)
+  local row = math.floor((ui_height - height) / 2)
+  local col = math.floor((ui_width - width) / 2)
+
+  -- Create help window
+  local help_win = vim.api.nvim_open_win(help_buf, true, {
+    relative = 'editor',
+    row = row,
+    col = col,
+    width = width,
+    height = height,
+    style = 'minimal',
+    border = 'rounded',
+    title = ' Help ',
+  })
+
+  -- Set help window options
+  vim.api.nvim_win_set_option(help_win, 'wrap', false)
+  vim.api.nvim_win_set_option(help_win, 'cursorline', false)
+
+  -- Close help on any key press
+  vim.keymap.set('n', '<Esc>', function()
+    vim.api.nvim_win_close(help_win, true)
+  end, { buffer = help_buf, noremap = true, silent = true })
+
+  -- Close help on any other key
+  vim.keymap.set('n', 'q', function()
+    vim.api.nvim_win_close(help_win, true)
+  end, { buffer = help_buf, noremap = true, silent = true })
+
+  -- Generic fallback for any key
+  vim.api.nvim_create_autocmd('BufLeave', {
+    buffer = help_buf,
+    callback = function()
+      if vim.api.nvim_win_is_valid(help_win) then
+        vim.api.nvim_win_close(help_win, true)
+      end
+    end,
+    once = true,
+  })
+end
+
+--- Legacy function for backward compatibility
+function M.tree_select_file()
+  M.tree_open_or_select()
 end
 
 --- Toggle folder expansion in tree

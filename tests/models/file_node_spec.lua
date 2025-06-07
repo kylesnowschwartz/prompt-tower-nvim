@@ -330,6 +330,188 @@ describe('FileNode', function()
     end)
   end)
 
+  describe('recursive selection', function()
+    local root, subdir1, subdir2, file1, file2, file3, file4
+
+    before_each(function()
+      -- Create test tree structure:
+      -- root/
+      --   file1.txt
+      --   subdir1/
+      --     file2.txt
+      --     subdir2/
+      --       file3.txt
+      --   file4.txt
+      root = FileNode.new({ path = '/tmp/root', type = FileNode.TYPE.DIRECTORY })
+      file1 = FileNode.new({ path = '/tmp/root/file1.txt' })
+      subdir1 = FileNode.new({ path = '/tmp/root/subdir1', type = FileNode.TYPE.DIRECTORY })
+      file2 = FileNode.new({ path = '/tmp/root/subdir1/file2.txt' })
+      subdir2 = FileNode.new({ path = '/tmp/root/subdir1/subdir2', type = FileNode.TYPE.DIRECTORY })
+      file3 = FileNode.new({ path = '/tmp/root/subdir1/subdir2/file3.txt' })
+      file4 = FileNode.new({ path = '/tmp/root/file4.txt' })
+
+      root:add_child(file1)
+      root:add_child(subdir1)
+      root:add_child(file4)
+      subdir1:add_child(file2)
+      subdir1:add_child(subdir2)
+      subdir2:add_child(file3)
+    end)
+
+    describe('set_selected_recursive', function()
+      it('should select all files recursively when called on directory', function()
+        root:set_selected_recursive(true)
+
+        assert.is_true(file1.selected)
+        assert.is_true(file2.selected)
+        assert.is_true(file3.selected)
+        assert.is_true(file4.selected)
+      end)
+
+      it('should not select directories themselves', function()
+        root:set_selected_recursive(true)
+
+        assert.is_false(root.selected)
+        assert.is_false(subdir1.selected)
+        assert.is_false(subdir2.selected)
+      end)
+
+      it('should deselect all files recursively', function()
+        -- First select all
+        root:set_selected_recursive(true)
+
+        -- Then deselect all
+        root:set_selected_recursive(false)
+
+        assert.is_false(file1.selected)
+        assert.is_false(file2.selected)
+        assert.is_false(file3.selected)
+        assert.is_false(file4.selected)
+      end)
+
+      it('should work on individual files', function()
+        file1:set_selected_recursive(true)
+
+        assert.is_true(file1.selected)
+        assert.is_false(file2.selected)
+        assert.is_false(file3.selected)
+        assert.is_false(file4.selected)
+      end)
+    end)
+
+    describe('get_selection_state', function()
+      it('should return "none" when no files are selected', function()
+        assert.equals('none', root:get_selection_state())
+        assert.equals('none', subdir1:get_selection_state())
+      end)
+
+      it('should return "all" when all files are selected', function()
+        root:set_selected_recursive(true)
+
+        assert.equals('all', root:get_selection_state())
+        assert.equals('all', subdir1:get_selection_state())
+        assert.equals('all', subdir2:get_selection_state())
+      end)
+
+      it('should return "partial" when some files are selected', function()
+        file1:set_selected(true)
+        file2:set_selected(true)
+        -- file3 and file4 remain unselected
+
+        assert.equals('partial', root:get_selection_state())
+        assert.equals('partial', subdir1:get_selection_state())
+      end)
+
+      it('should return correct state for individual files', function()
+        file1:set_selected(true)
+        file2:set_selected(false)
+
+        assert.equals('all', file1:get_selection_state())
+        assert.equals('none', file2:get_selection_state())
+      end)
+
+      it('should return "none" for empty directories', function()
+        local empty_dir = FileNode.new({ path = '/tmp/empty', type = FileNode.TYPE.DIRECTORY })
+        assert.equals('none', empty_dir:get_selection_state())
+      end)
+
+      it('should handle single file in directory', function()
+        local single_file_dir = FileNode.new({ path = '/tmp/single', type = FileNode.TYPE.DIRECTORY })
+        local single_file = FileNode.new({ path = '/tmp/single/file.txt' })
+        single_file_dir:add_child(single_file)
+
+        assert.equals('none', single_file_dir:get_selection_state())
+
+        single_file:set_selected(true)
+        assert.equals('all', single_file_dir:get_selection_state())
+      end)
+    end)
+
+    describe('toggle_recursive_selection', function()
+      it('should select all when starting from none', function()
+        root:toggle_recursive_selection()
+
+        assert.is_true(file1.selected)
+        assert.is_true(file2.selected)
+        assert.is_true(file3.selected)
+        assert.is_true(file4.selected)
+      end)
+
+      it('should deselect all when all are selected', function()
+        root:set_selected_recursive(true)
+        root:toggle_recursive_selection()
+
+        assert.is_false(file1.selected)
+        assert.is_false(file2.selected)
+        assert.is_false(file3.selected)
+        assert.is_false(file4.selected)
+      end)
+
+      it('should select all when partially selected', function()
+        file1:set_selected(true)
+        file2:set_selected(true)
+        -- file3 and file4 unselected (partial state)
+
+        root:toggle_recursive_selection()
+
+        assert.is_true(file1.selected)
+        assert.is_true(file2.selected)
+        assert.is_true(file3.selected)
+        assert.is_true(file4.selected)
+      end)
+
+      it('should work on subdirectories', function()
+        subdir1:toggle_recursive_selection()
+
+        assert.is_false(file1.selected) -- not in subdir1
+        assert.is_true(file2.selected) -- in subdir1
+        assert.is_true(file3.selected) -- in subdir1/subdir2
+        assert.is_false(file4.selected) -- not in subdir1
+      end)
+    end)
+
+    describe('convenience methods', function()
+      it('should provide select_recursive method', function()
+        root:select_recursive()
+
+        assert.is_true(file1.selected)
+        assert.is_true(file2.selected)
+        assert.is_true(file3.selected)
+        assert.is_true(file4.selected)
+      end)
+
+      it('should provide deselect_recursive method', function()
+        root:set_selected_recursive(true)
+        root:deselect_recursive()
+
+        assert.is_false(file1.selected)
+        assert.is_false(file2.selected)
+        assert.is_false(file3.selected)
+        assert.is_false(file4.selected)
+      end)
+    end)
+  end)
+
   describe('to_string', function()
     it('should provide readable string representation', function()
       local file_node = FileNode.new({ path = '/tmp/test.txt', selected = true })
