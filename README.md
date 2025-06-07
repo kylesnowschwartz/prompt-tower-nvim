@@ -150,6 +150,24 @@ require('prompt-tower').setup({
 })
 ````
 
+### Nerd Font Support
+
+The plugin automatically detects Nerd Font support and adapts icons accordingly:
+
+```lua
+-- Enable Nerd Font icons (default if Nerd Fonts are available)
+vim.g.have_nerd_font = true
+
+-- Disable Nerd Font icons (falls back to emoji)
+vim.g.have_nerd_font = false
+```
+
+**Icon Behavior:**
+- **With Nerd Fonts**: Uses specific Nerd Font icons for different file types (Lua: `󰢱`, JS: `󰌞`, Shell: `󰆍`, etc.)
+- **Without Nerd Fonts**: Falls back to emoji icons (📁 for folders, 📄 for files)
+
+The plugin respects the global `vim.g.have_nerd_font` setting, commonly used by Neovim configurations like kickstart.nvim.
+
 ### Template Formats
 
 prompt-tower.nvim supports three built-in template formats (XML, Markdown, Minimal) that can be switched on-the-fly using `:PromptTower format <name>`.

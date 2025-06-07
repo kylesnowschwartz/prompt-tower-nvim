@@ -10,6 +10,28 @@ local workspace = require('prompt-tower.services.workspace')
 local has_devicons, devicons = pcall(require, 'nvim-web-devicons')
 local devicons_ns = vim.api.nvim_create_namespace('prompt_tower_devicons')
 
+-- Nerd Font detection
+local have_nerd_font = vim.g.have_nerd_font ~= false
+
+-- Icon configuration based on font support
+local icons = have_nerd_font
+    and {
+      folder = '',
+      file = '󰈔',
+      lua = '󰢱',
+      javascript = '󰌞',
+      shell = '󰆍',
+      ruby = '󰴭',
+    }
+  or {
+    folder = '📁',
+    file = '📄',
+    lua = '📄',
+    javascript = '📄',
+    shell = '📄',
+    ruby = '📄',
+  }
+
 local M = {}
 
 -- UI state
@@ -47,10 +69,10 @@ local function setup_devicons()
 
   local folder_icon = devicons.get_icon('lir_folder_icon')
   if folder_icon == nil then
-    -- Use a more common Nerd Font folder icon
+    -- Use appropriate folder icon based on font support
     devicons.set_icon({
       lir_folder_icon = {
-        icon = '', -- More standard folder icon
+        icon = icons.folder,
         color = '#7ebae4',
         name = 'LirFolderNode',
       },
@@ -71,33 +93,32 @@ end
 --- @return string icon, string highlight_name
 local function get_file_icon(filename, is_dir)
   if not has_devicons then
-    return is_dir and '' or '', ''
+    return is_dir and icons.folder or icons.file, ''
   end
 
   local icon, highlight
 
   if is_dir then
     icon, highlight = devicons.get_icon('lir_folder_icon', '', { default = true })
-    -- Debug: check what devicons returns
+    -- Fallback if devicons returns nothing
     if not icon or icon == '' then
-      icon = '' -- Fallback to standard folder icon
+      icon = icons.folder
     end
   else
     local ext = string.match(filename, '%.([^%.]+)$') or ''
     icon, highlight = devicons.get_icon(filename, ext, { default = true })
-    -- Debug: check what devicons returns for files
+    -- Fallback with appropriate icons based on font support
     if not icon or icon == '' then
-      -- Use different icons for different file types
       if ext == 'lua' then
-        icon = '󰢱'
+        icon = icons.lua
       elseif ext == 'js' then
-        icon = '󰌞'
+        icon = icons.javascript
       elseif ext == 'sh' then
-        icon = '󰆍'
+        icon = icons.shell
       elseif ext == 'rb' then
-        icon = '󰴭'
+        icon = icons.ruby
       else
-        icon = '󰈔' -- Generic file icon
+        icon = icons.file
       end
     end
   end
