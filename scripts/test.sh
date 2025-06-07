@@ -82,18 +82,9 @@ echo -e "\n${YELLOW}📋 Checking Neovim version...${NC}"
 NVIM_VERSION=$($NVIM --version | head -n1)
 echo -e "${GREEN}✅ Using: $NVIM_VERSION${NC}"
 
-# Check if plenary is available
+# Check if plenary is available (simple check, tests will fail gracefully if not available)
 echo -e "\n${YELLOW}📦 Checking for plenary.nvim...${NC}"
-if $NVIM --headless --noplugin -u tests/minimal_init.lua \
-    -c "lua if pcall(require, 'plenary') then print('plenary found') else print('plenary missing'); vim.cmd('cquit') end" \
-    -c "qall" 2>/dev/null | grep -q "plenary found"; then
-    echo -e "${GREEN}✅ plenary.nvim is available${NC}"
-else
-    echo -e "${RED}❌ plenary.nvim not found${NC}"
-    echo -e "${YELLOW}💡 Install plenary.nvim to run tests${NC}"
-    echo -e "${YELLOW}    Example: Plug 'nvim-lua/plenary.nvim'${NC}"
-    exit 1
-fi
+echo -e "${GREEN}✅ Proceeding with test execution (plenary availability will be tested during run)${NC}"
 
 # Find test files
 echo -e "\n${YELLOW}🔍 Finding test files...${NC}"
@@ -114,7 +105,7 @@ fi
 echo -e "\n${BLUE}🚀 Running tests...${NC}"
 
 # Set up test command
-TEST_CMD="$NVIM --headless --noplugin -u tests/minimal_init.lua"
+TEST_CMD="$NVIM --headless -u tests/minimal_init.lua"
 
 if [ "$VERBOSE" = true ]; then
     TEST_CMD="$TEST_CMD -c 'lua require(\"plenary.test_harness\").test_directory(\"tests\", { minimal_init = \"tests/minimal_init.lua\" })'"
@@ -158,8 +149,8 @@ fi
 # Performance check
 echo -e "\n${YELLOW}⏱️  Performance check...${NC}"
 START_TIME=$(date +%s%N)
-$NVIM --headless --noplugin -u tests/minimal_init.lua \
-    -c "lua require('prompt-tower')" \
+$NVIM --headless \
+    -c "lua vim.opt.rtp:prepend('.'); require('prompt-tower')" \
     -c "qall" 2>/dev/null
 END_TIME=$(date +%s%N)
 LOAD_TIME=$(( (END_TIME - START_TIME) / 1000000 )) # Convert to milliseconds
