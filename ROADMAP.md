@@ -363,7 +363,52 @@ _GitHub integration and sophisticated capabilities_
 - **Add**: Smart refresh (only affected parts)
 - **Add**: Debounced updates
 
-#### 4.4 Advanced UI Features (LOW PRIORITY)
+#### 4.4 Configurable UI Settings (MEDIUM PRIORITY)
+
+**Current**: Hardcoded UI dimensions and styling
+**Target**: User-configurable UI appearance
+
+**Implementation:**
+
+- **Add**: Configurable window dimensions (width, height)
+- **Add**: Configurable border styles
+- **Add**: Configurable window titles
+- **Add**: UI theme customization options
+
+**Configuration:**
+```lua
+ui = {
+  border = 'rounded', -- 'rounded', 'single', 'double', 'shadow'
+  width = 0.8,        -- Percentage of screen width
+  height = 0.8,       -- Percentage of screen height
+  title = 'Prompt Tower',
+  show_help = true,
+},
+```
+
+#### 4.5 Token Counting and Estimation (MEDIUM PRIORITY)
+
+**Current**: No token estimation
+**Target**: Real-time token counting for prompt optimization
+
+**Implementation:**
+
+- **Add**: Character-to-token estimation
+- **Add**: Real-time token count display in UI
+- **Add**: Warning thresholds for large contexts
+- **Add**: Token-based file size warnings
+
+**Configuration:**
+```lua
+token_estimation = {
+  chars_per_token = 4,      -- Rough estimation ratio
+  show_warnings = true,     -- Show warnings for large contexts
+  warning_threshold = 8000, -- Token warning threshold
+  show_in_ui = true,       -- Display token count in UI
+},
+```
+
+#### 4.6 Advanced UI Features (LOW PRIORITY)
 
 **Current**: Basic floating window UI
 **Target**: Rich interactive interface
