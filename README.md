@@ -118,6 +118,47 @@ require('prompt-tower').setup({
 })
 ```
 
+### File Ignore Patterns
+
+prompt-tower.nvim supports multiple ways to exclude files from selection:
+
+1. **Built-in ignore patterns**: Common patterns like `node_modules`, `.git`, etc.
+2. **`.gitignore` files**: Respects project `.gitignore` files (when `use_gitignore = true`)
+3. **`.towerignore` files**: Custom ignore patterns specific to Prompt Tower (when `use_towerignore = true`)
+
+#### Using .towerignore
+
+Create a `.towerignore` file in your project root with custom ignore patterns:
+
+```gitignore
+# Example .towerignore file
+
+# Ignore test output files
+test_output.log
+*.log
+
+# Ignore temporary editor files
+*.swp
+*.swo
+*~
+
+# Ignore large build artifacts
+dist/
+build/
+target/
+
+# Custom project-specific patterns
+scratch/
+temp/
+docs/archive/
+```
+
+The `.towerignore` file uses the same syntax as `.gitignore` files and supports:
+- Glob patterns (`*.log`, `temp*`)
+- Directory patterns (`node_modules/`)
+- Negation patterns (`!important.log`)
+- Comments (`# This is a comment`)
+
 ## Development
 
 ### Requirements

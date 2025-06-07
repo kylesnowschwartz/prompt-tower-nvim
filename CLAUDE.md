@@ -98,7 +98,7 @@ When adding new functionality:
 
 The plugin's core workflow:
 1. **Workspace Detection**: Auto-detects project roots from current buffers and working directory
-2. **File Discovery**: Scans workspace respecting gitignore and custom ignore patterns
+2. **File Discovery**: Scans workspace respecting .gitignore, .towerignore, and custom ignore patterns
 3. **Selection Management**: Tracks selected files using file node objects
 4. **Context Generation**: Creates structured output with configurable templates
 5. **Clipboard Integration**: Copies generated context to system clipboard

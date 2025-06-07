@@ -1,0 +1,24 @@
+# Test .towerignore file for prompt-tower.nvim
+# This file allows custom ignore patterns specific to Prompt Tower
+
+# Ignore test output files
+test_output.log
+*.log
+
+# Ignore temporary editor files
+*.swp
+*.swo
+*~
+
+# Ignore compiled files and cache
+*.o
+*.pyc
+__pycache__/
+
+# Ignore IDE specific files
+.vscode/
+.idea/
+
+# Custom project-specific ignores
+temp/
+scratch/

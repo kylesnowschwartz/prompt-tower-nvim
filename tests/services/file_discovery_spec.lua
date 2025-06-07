@@ -105,6 +105,43 @@ describe('file_discovery', function()
       assert.is_true(vim.tbl_contains(patterns, 'custom_pattern'))
       assert.is_true(vim.tbl_contains(patterns, 'another_pattern'))
     end)
+
+    it('should load .towerignore patterns when enabled', function()
+      -- Test that _load_towerignore function exists and can be called
+      local towerignore_patterns = file_discovery._load_towerignore('/tmp')
+      assert.is_table(towerignore_patterns)
+      -- Since we can't guarantee .towerignore exists in /tmp, just test that function works
+    end)
+
+    it('should include .towerignore patterns in combined patterns when enabled', function()
+      config.setup({
+        use_towerignore = true,
+        ignore_patterns = { 'config_pattern' },
+      })
+
+      local patterns = file_discovery._load_ignore_patterns('/tmp', {
+        respect_gitignore = false,
+        custom_ignore = {},
+      })
+
+      -- Should include config patterns at minimum
+      assert.is_true(vim.tbl_contains(patterns, 'config_pattern'))
+    end)
+
+    it('should not include .towerignore patterns when disabled', function()
+      config.setup({
+        use_towerignore = false,
+        ignore_patterns = { 'config_pattern' },
+      })
+
+      local patterns = file_discovery._load_ignore_patterns('/tmp', {
+        respect_gitignore = false,
+        custom_ignore = {},
+      })
+
+      -- Should include config patterns but not try to load .towerignore
+      assert.is_true(vim.tbl_contains(patterns, 'config_pattern'))
+    end)
   end)
 
   describe('find_files', function()

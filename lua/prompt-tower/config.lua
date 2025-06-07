@@ -21,8 +21,8 @@ local defaults = {
     '.next',
     '.nuxt',
   },
-  use_gitignore = true,
-  use_towerignore = true,
+  use_gitignore = true, -- Respect .gitignore files for ignore patterns
+  use_towerignore = true, -- Respect .towerignore files for custom ignore patterns
   max_file_size_kb = 500, -- 500KB limit (matches VSCode default)
 
   -- Context generation settings (matches VSCode structure)
