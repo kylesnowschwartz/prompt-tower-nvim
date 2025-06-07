@@ -69,8 +69,17 @@ function M._detect_workspaces()
     end
   end
 
-  state.workspaces = workspaces
-  state.current_workspace = workspaces[1] -- Default to first workspace
+  -- Merge with existing workspaces instead of replacing
+  for _, workspace_path in ipairs(workspaces) do
+    if not vim.tbl_contains(state.workspaces, workspace_path) then
+      table.insert(state.workspaces, workspace_path)
+    end
+  end
+
+  -- Set default current workspace if none is set
+  if not state.current_workspace and #state.workspaces > 0 then
+    state.current_workspace = state.workspaces[1]
+  end
 end
 
 --- Find project root by looking for common project files
@@ -129,11 +138,12 @@ function M.set_current_workspace(workspace_path)
   ensure_workspaces_detected()
   vim.validate('workspace_path', workspace_path, 'string')
 
-  if not vim.tbl_contains(state.workspaces, workspace_path) then
+  local normalized_path = vim.fn.fnamemodify(workspace_path, ':p'):gsub('/$', '')
+  if not vim.tbl_contains(state.workspaces, normalized_path) then
     return false
   end
 
-  state.current_workspace = workspace_path
+  state.current_workspace = normalized_path
   return true
 end
 
@@ -149,7 +159,7 @@ function M.add_workspace(workspace_path)
     return false
   end
 
-  local normalized_path = vim.fn.fnamemodify(workspace_path, ':p:h')
+  local normalized_path = vim.fn.fnamemodify(workspace_path, ':p'):gsub('/$', '')
   if not vim.tbl_contains(state.workspaces, normalized_path) then
     table.insert(state.workspaces, normalized_path)
     if not state.current_workspace then
