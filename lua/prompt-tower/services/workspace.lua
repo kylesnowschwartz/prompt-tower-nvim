@@ -1,16 +1,15 @@
 -- lua/prompt-tower/services/workspace.lua
 -- Workspace management service for handling project roots and file discovery
 
-local file_discovery = require('prompt-tower.services.file_discovery')
-local FileNode = require('prompt-tower.models.file_node')
 local config = require('prompt-tower.config')
+local file_discovery = require('prompt-tower.services.file_discovery')
 
 local M = {}
 
 -- Internal state
 local state = {
-  workspaces = {},  -- List of workspace root paths
-  file_trees = {},  -- Cached file trees by workspace
+  workspaces = {}, -- List of workspace root paths
+  file_trees = {}, -- Cached file trees by workspace
   selected_files = {}, -- Selected file nodes by path
   current_workspace = nil,
 }
@@ -24,7 +23,7 @@ function M.setup()
     selected_files = {},
     current_workspace = nil,
   }
-  
+
   -- Detect workspaces from Neovim
   M._detect_workspaces()
 end
@@ -32,13 +31,13 @@ end
 --- Detect workspaces from current Neovim session
 function M._detect_workspaces()
   local workspaces = {}
-  
+
   -- Get current working directory
   local cwd = vim.fn.getcwd()
   if cwd and cwd ~= '' then
     table.insert(workspaces, cwd)
   end
-  
+
   -- Get all listed buffers and extract unique directories
   local buffer_dirs = {}
   for _, buf in ipairs(vim.api.nvim_list_bufs()) do
@@ -52,7 +51,7 @@ function M._detect_workspaces()
       end
     end
   end
-  
+
   -- Find project roots for buffer directories
   for dir, _ in pairs(buffer_dirs) do
     local project_root = M._find_project_root(dir)
@@ -60,7 +59,7 @@ function M._detect_workspaces()
       table.insert(workspaces, project_root)
     end
   end
-  
+
   state.workspaces = workspaces
   state.current_workspace = workspaces[1] -- Default to first workspace
 end
@@ -79,7 +78,7 @@ function M._find_project_root(start_dir)
     'Makefile',
     '.towerignore',
   }
-  
+
   local dir = start_dir
   while dir and dir ~= '/' do
     for _, marker in ipairs(root_markers) do
@@ -88,7 +87,7 @@ function M._find_project_root(start_dir)
         return dir
       end
     end
-    
+
     -- Move up one directory
     local parent = vim.fn.fnamemodify(dir, ':h')
     if parent == dir then
@@ -96,7 +95,7 @@ function M._find_project_root(start_dir)
     end
     dir = parent
   end
-  
+
   return nil
 end
 
@@ -117,11 +116,11 @@ end
 --- @return boolean Success
 function M.set_current_workspace(workspace_path)
   vim.validate('workspace_path', workspace_path, 'string')
-  
+
   if not vim.tbl_contains(state.workspaces, workspace_path) then
     return false
   end
-  
+
   state.current_workspace = workspace_path
   return true
 end
@@ -131,13 +130,13 @@ end
 --- @return boolean Success
 function M.add_workspace(workspace_path)
   vim.validate('workspace_path', workspace_path, 'string')
-  
+
   -- Ensure path exists and is a directory
   local stat = vim.loop.fs_stat(workspace_path)
   if not stat or stat.type ~= 'directory' then
     return false
   end
-  
+
   local normalized_path = vim.fn.fnamemodify(workspace_path, ':p:h')
   if not vim.tbl_contains(state.workspaces, normalized_path) then
     table.insert(state.workspaces, normalized_path)
@@ -145,7 +144,7 @@ function M.add_workspace(workspace_path)
       state.current_workspace = normalized_path
     end
   end
-  
+
   return true
 end
 
@@ -154,23 +153,23 @@ end
 --- @return boolean Success
 function M.remove_workspace(workspace_path)
   vim.validate('workspace_path', workspace_path, 'string')
-  
+
   for i, path in ipairs(state.workspaces) do
     if path == workspace_path then
       table.remove(state.workspaces, i)
-      
+
       -- Clear cached tree
       state.file_trees[workspace_path] = nil
-      
+
       -- Update current workspace if needed
       if state.current_workspace == workspace_path then
         state.current_workspace = state.workspaces[1]
       end
-      
+
       return true
     end
   end
-  
+
   return false
 end
 
@@ -183,12 +182,12 @@ function M.scan_workspace(workspace_path, force_refresh)
   if not workspace_path then
     return nil
   end
-  
+
   -- Return cached tree if available and not forcing refresh
   if not force_refresh and state.file_trees[workspace_path] then
     return state.file_trees[workspace_path]
   end
-  
+
   -- Scan directory
   local scan_opts = {
     max_depth = config.get_value('file_discovery.max_depth') or 10,
@@ -196,16 +195,16 @@ function M.scan_workspace(workspace_path, force_refresh)
     respect_gitignore = config.get_value('use_gitignore'),
     custom_ignore = config.get_value('ignore_patterns') or {},
   }
-  
+
   local success, result = pcall(file_discovery.scan_directory, workspace_path, scan_opts)
   if not success then
     vim.notify(string.format('Failed to scan workspace: %s', result), vim.log.levels.ERROR)
     return nil
   end
-  
+
   -- Cache the result
   state.file_trees[workspace_path] = result
-  
+
   return result
 end
 
@@ -217,7 +216,7 @@ function M.get_file_tree(workspace_path)
   if not workspace_path then
     return nil
   end
-  
+
   return state.file_trees[workspace_path]
 end
 
@@ -227,29 +226,29 @@ end
 --- @return FileNode? File node or nil if not found
 function M.find_file_node(file_path, workspace_path)
   vim.validate('file_path', file_path, 'string')
-  
+
   workspace_path = workspace_path or state.current_workspace
   local file_tree = M.get_file_tree(workspace_path)
-  
+
   if not file_tree then
     return nil
   end
-  
+
   local function search_tree(node)
     if node.path == file_path then
       return node
     end
-    
+
     for _, child in ipairs(node.children) do
       local found = search_tree(child)
       if found then
         return found
       end
     end
-    
+
     return nil
   end
-  
+
   return search_tree(file_tree)
 end
 
@@ -258,21 +257,21 @@ end
 --- @return boolean Success
 function M.select_file(file_path)
   vim.validate('file_path', file_path, 'string')
-  
+
   -- Find the file node
   local file_node = M.find_file_node(file_path)
   if not file_node then
     return false
   end
-  
+
   -- Only select files, not directories
   if not file_node:is_file() then
     return false
   end
-  
+
   state.selected_files[file_path] = file_node
   file_node:set_selected(true)
-  
+
   return true
 end
 
@@ -281,14 +280,14 @@ end
 --- @return boolean Success
 function M.deselect_file(file_path)
   vim.validate('file_path', file_path, 'string')
-  
+
   local file_node = state.selected_files[file_path]
   if file_node then
     state.selected_files[file_path] = nil
     file_node:set_selected(false)
     return true
   end
-  
+
   return false
 end
 
@@ -297,7 +296,7 @@ end
 --- @return boolean New selection state
 function M.toggle_file_selection(file_path)
   vim.validate('file_path', file_path, 'string')
-  
+
   if state.selected_files[file_path] then
     M.deselect_file(file_path)
     return false
@@ -322,10 +321,12 @@ function M.get_selected_files()
   for _, node in pairs(state.selected_files) do
     table.insert(selected, node)
   end
-  
+
   -- Sort by path for consistent ordering
-  table.sort(selected, function(a, b) return a.path < b.path end)
-  
+  table.sort(selected, function(a, b)
+    return a.path < b.path
+  end)
+
   return selected
 end
 
@@ -349,11 +350,11 @@ end
 function M.get_workspace_stats(workspace_path)
   workspace_path = workspace_path or state.current_workspace
   local file_tree = M.get_file_tree(workspace_path)
-  
+
   if not file_tree then
     return nil
   end
-  
+
   return file_discovery.get_statistics(file_tree)
 end
 
@@ -363,14 +364,14 @@ end
 function M.export_selected_files(relative)
   local selected_files = M.get_selected_files()
   local file_paths = {}
-  
+
   local base_path = relative and state.current_workspace or nil
-  
+
   for _, node in ipairs(selected_files) do
     local path = base_path and node:get_relative_path(base_path) or node.path
     table.insert(file_paths, path)
   end
-  
+
   return file_paths
 end
 

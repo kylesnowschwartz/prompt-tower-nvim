@@ -22,10 +22,10 @@ M.TYPE = {
 function M.new(opts)
   vim.validate('opts', opts, 'table')
   vim.validate('opts.path', opts.path, 'string')
-  
+
   local path = opts.path
   local stat = vim.loop.fs_stat(path)
-  
+
   local node = {
     path = path,
     name = opts.name or vim.fn.fnamemodify(path, ':t'),
@@ -37,10 +37,10 @@ function M.new(opts)
     modified = opts.modified or (stat and stat.mtime.sec or 0),
     expanded = false, -- For directory tree display
   }
-  
+
   -- Set metatable for methods
   setmetatable(node, { __index = M })
-  
+
   return node
 end
 
@@ -62,7 +62,7 @@ function M:get_extension()
   if not self:is_file() then
     return nil
   end
-  
+
   local ext = vim.fn.fnamemodify(self.path, ':e')
   return ext ~= '' and ext or nil
 end
@@ -72,19 +72,19 @@ end
 --- @return string Relative path
 function M:get_relative_path(base_path)
   vim.validate('base_path', base_path, 'string')
-  
+
   -- Normalize paths
   local abs_path = vim.fn.fnamemodify(self.path, ':p')
   local abs_base = vim.fn.fnamemodify(base_path, ':p')
-  
+
   -- Remove trailing slash from base
   abs_base = abs_base:gsub('/$', '')
-  
+
   -- Check if path is under base
   if abs_path:sub(1, #abs_base + 1) == abs_base .. '/' then
     return abs_path:sub(#abs_base + 2)
   end
-  
+
   -- Fallback to absolute path if not under base
   return abs_path
 end
@@ -104,14 +104,14 @@ end
 --- @return boolean True if file should be ignored
 function M:matches_ignore_patterns(patterns)
   vim.validate('patterns', patterns, 'table')
-  
+
   for _, pattern in ipairs(patterns) do
     -- Simple pattern matching - can be enhanced later
     if self.name:match(pattern) or self.path:match(pattern) then
       return true
     end
   end
-  
+
   return false
 end
 
@@ -119,14 +119,14 @@ end
 --- @param child FileNode Child node to add
 function M:add_child(child)
   vim.validate('child', child, 'table')
-  
+
   if not self:is_directory() then
     error('Cannot add child to non-directory node')
   end
-  
+
   child.parent = self
   table.insert(self.children, child)
-  
+
   -- Sort children: directories first, then alphabetically
   table.sort(self.children, function(a, b)
     if a:is_directory() and not b:is_directory() then
@@ -144,7 +144,7 @@ end
 --- @return boolean True if child was found and removed
 function M:remove_child(child)
   vim.validate('child', child, 'table')
-  
+
   for i, existing_child in ipairs(self.children) do
     if existing_child == child then
       table.remove(self.children, i)
@@ -152,7 +152,7 @@ function M:remove_child(child)
       return true
     end
   end
-  
+
   return false
 end
 
@@ -161,13 +161,13 @@ end
 --- @return FileNode? Child node or nil if not found
 function M:find_child(name)
   vim.validate('name', name, 'string')
-  
+
   for _, child in ipairs(self.children) do
     if child.name == name then
       return child
     end
   end
-  
+
   return nil
 end
 
@@ -175,7 +175,7 @@ end
 --- @return FileNode[] List of all file nodes in the subtree
 function M:get_all_files()
   local files = {}
-  
+
   if self:is_file() then
     table.insert(files, self)
   else
@@ -183,7 +183,7 @@ function M:get_all_files()
       vim.list_extend(files, child:get_all_files())
     end
   end
-  
+
   return files
 end
 
@@ -192,12 +192,12 @@ end
 function M:get_depth()
   local depth = 0
   local current = self.parent
-  
+
   while current do
     depth = depth + 1
     current = current.parent
   end
-  
+
   return depth
 end
 
@@ -241,7 +241,9 @@ function M:export()
     selected = self.selected,
     size = self.size,
     modified = self.modified,
-    children = vim.tbl_map(function(child) return child:export() end, self.children),
+    children = vim.tbl_map(function(child)
+      return child:export()
+    end, self.children),
   }
 end
 
@@ -251,7 +253,7 @@ end
 --- @return FileNode Reconstructed node
 function M.from_export(data, parent)
   vim.validate('data', data, 'table')
-  
+
   local node = M.new({
     path = data.path,
     name = data.name,
@@ -261,13 +263,13 @@ function M.from_export(data, parent)
     size = data.size,
     modified = data.modified,
   })
-  
+
   -- Reconstruct children
   for _, child_data in ipairs(data.children or {}) do
     local child = M.from_export(child_data, node)
     table.insert(node.children, child)
   end
-  
+
   return node
 end
 

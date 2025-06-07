@@ -17,36 +17,36 @@ local M = {}
 function M.scan_directory(root_path, opts)
   vim.validate('root_path', root_path, 'string')
   vim.validate('opts', opts or {}, 'table')
-  
+
   opts = vim.tbl_extend('force', {
     max_depth = 10,
     include_hidden = false,
     respect_gitignore = true,
     custom_ignore = {},
   }, opts or {})
-  
+
   -- Ensure root path exists
   local stat = vim.loop.fs_stat(root_path)
   if not stat then
     error(string.format('Directory does not exist: %s', root_path))
   end
-  
+
   if stat.type ~= 'directory' then
     error(string.format('Path is not a directory: %s', root_path))
   end
-  
+
   -- Create root node
   local root_node = FileNode.new({
     path = vim.fn.fnamemodify(root_path, ':p'),
     type = FileNode.TYPE.DIRECTORY,
   })
-  
+
   -- Load ignore patterns
   local ignore_patterns = M._load_ignore_patterns(root_path, opts)
-  
+
   -- Scan recursively
-  M._scan_recursive(root_node, 0, opts.max_depth, ignore_patterns, opts)
-  
+  _scan_recursive(root_node, 0, opts.max_depth, ignore_patterns, opts)
+
   return root_node
 end
 
@@ -56,42 +56,42 @@ end
 --- @param max_depth number Maximum depth to scan
 --- @param ignore_patterns table Ignore patterns to apply
 --- @param opts table Scanning options
-local function M._scan_recursive(parent_node, current_depth, max_depth, ignore_patterns, opts)
+local function _scan_recursive(parent_node, current_depth, max_depth, ignore_patterns, opts)
   if current_depth >= max_depth then
     return
   end
-  
+
   local handle = vim.loop.fs_scandir(parent_node.path)
   if not handle then
     -- Cannot read directory (permission issues, etc.)
     return
   end
-  
+
   while true do
     local name, type = vim.loop.fs_scandir_next(handle)
     if not name then
       break
     end
-    
+
     -- Skip hidden files unless requested
     if not opts.include_hidden and name:sub(1, 1) == '.' then
       goto continue
     end
-    
+
     local full_path = parent_node.path .. '/' .. name
-    
+
     -- Create child node
     local child_node = FileNode.new({
       path = full_path,
       name = name,
       type = type == 'directory' and FileNode.TYPE.DIRECTORY or FileNode.TYPE.FILE,
     })
-    
+
     -- Check ignore patterns
     if M._should_ignore(child_node, ignore_patterns) then
       goto continue
     end
-    
+
     -- Check file size limits for files
     if child_node:is_file() then
       local max_size_bytes = config.get_value('max_file_size_kb') * 1024
@@ -99,15 +99,15 @@ local function M._scan_recursive(parent_node, current_depth, max_depth, ignore_p
         goto continue
       end
     end
-    
+
     -- Add to parent
     parent_node:add_child(child_node)
-    
+
     -- Recursively scan directories
     if child_node:is_directory() then
-      M._scan_recursive(child_node, current_depth + 1, max_depth, ignore_patterns, opts)
+      _scan_recursive(child_node, current_depth + 1, max_depth, ignore_patterns, opts)
     end
-    
+
     ::continue::
   end
 end
@@ -118,28 +118,28 @@ end
 --- @return table Combined ignore patterns
 function M._load_ignore_patterns(root_path, opts)
   local patterns = {}
-  
+
   -- Add default ignore patterns from config
   local default_patterns = config.get_value('ignore_patterns') or {}
   vim.list_extend(patterns, default_patterns)
-  
+
   -- Add custom patterns from options
   if opts.custom_ignore then
     vim.list_extend(patterns, opts.custom_ignore)
   end
-  
+
   -- Load .gitignore if requested
   if opts.respect_gitignore and config.get_value('use_gitignore') then
     local gitignore_patterns = M._load_gitignore(root_path)
     vim.list_extend(patterns, gitignore_patterns)
   end
-  
+
   -- Load .towerignore if exists
   if config.get_value('use_towerignore') then
     local towerignore_patterns = M._load_towerignore(root_path)
     vim.list_extend(patterns, towerignore_patterns)
   end
-  
+
   return patterns
 end
 
@@ -164,16 +164,16 @@ end
 --- @return table List of ignore patterns
 function M._load_ignore_file(file_path)
   local patterns = {}
-  
+
   local file = io.open(file_path, 'r')
   if not file then
     return patterns
   end
-  
+
   for line in file:lines() do
     -- Trim whitespace
     line = line:match('^%s*(.-)%s*$')
-    
+
     -- Skip empty lines and comments
     if line ~= '' and not line:match('^#') then
       -- Convert gitignore patterns to Lua patterns (basic implementation)
@@ -183,7 +183,7 @@ function M._load_ignore_file(file_path)
       end
     end
   end
-  
+
   file:close()
   return patterns
 end
@@ -194,28 +194,26 @@ end
 function M._convert_gitignore_pattern(gitignore_pattern)
   -- This is a simplified implementation
   -- A full implementation would need more complex glob pattern handling
-  
+
   local pattern = gitignore_pattern
-  
-  -- Handle trailing slash (directories only)
-  local dir_only = false
+
+  -- Handle trailing slash (directories only) - remove trailing slash for pattern matching
   if pattern:sub(-1) == '/' then
-    dir_only = true
     pattern = pattern:sub(1, -2)
   end
-  
+
   -- Escape special Lua pattern characters except * and ?
   pattern = pattern:gsub('[%(%)%.%+%-%^%$%%%[%]]', '%%%1')
-  
+
   -- Convert glob patterns
-  pattern = pattern:gsub('%*', '.*')  -- * -> .*
-  pattern = pattern:gsub('%?', '.')   -- ? -> .
-  
+  pattern = pattern:gsub('%*', '.*') -- * -> .*
+  pattern = pattern:gsub('%?', '.') -- ? -> .
+
   -- Handle leading slash (absolute path)
   if pattern:sub(1, 1) == '/' then
     pattern = '^' .. pattern:sub(2)
   end
-  
+
   return pattern
 end
 
@@ -228,14 +226,14 @@ function M._should_ignore(node, patterns)
   if node.name == '.git' and node:is_directory() then
     return true
   end
-  
+
   -- Check against patterns
   for _, pattern in ipairs(patterns) do
     if node.name:match(pattern) or node.path:match(pattern) then
       return true
     end
   end
-  
+
   return false
 end
 
@@ -246,19 +244,19 @@ end
 function M.find_files(root_node, pattern)
   vim.validate('root_node', root_node, 'table')
   vim.validate('pattern', pattern, 'string')
-  
+
   local matches = {}
-  
+
   local function search_recursive(node)
     if node:is_file() and node.name:match(pattern) then
       table.insert(matches, node)
     end
-    
+
     for _, child in ipairs(node.children) do
       search_recursive(child)
     end
   end
-  
+
   search_recursive(root_node)
   return matches
 end
@@ -268,7 +266,7 @@ end
 --- @return table Statistics about the file tree
 function M.get_statistics(root_node)
   vim.validate('root_node', root_node, 'table')
-  
+
   local stats = {
     total_files = 0,
     total_directories = 0,
@@ -276,15 +274,15 @@ function M.get_statistics(root_node)
     max_depth = 0,
     file_types = {},
   }
-  
+
   local function collect_stats(node, depth)
     depth = depth or 0
     stats.max_depth = math.max(stats.max_depth, depth)
-    
+
     if node:is_file() then
       stats.total_files = stats.total_files + 1
       stats.total_size = stats.total_size + (node.size or 0)
-      
+
       local ext = node:get_extension()
       if ext then
         stats.file_types[ext] = (stats.file_types[ext] or 0) + 1
@@ -292,12 +290,12 @@ function M.get_statistics(root_node)
     else
       stats.total_directories = stats.total_directories + 1
     end
-    
+
     for _, child in ipairs(node.children) do
       collect_stats(child, depth + 1)
     end
   end
-  
+
   collect_stats(root_node)
   return stats
 end
@@ -308,23 +306,23 @@ end
 --- @return table List of file paths
 function M.export_file_list(root_node, relative_to)
   vim.validate('root_node', root_node, 'table')
-  
+
   local file_list = {}
-  
+
   local function collect_files(node)
     if node:is_file() then
       local path = relative_to and node:get_relative_path(relative_to) or node.path
       table.insert(file_list, path)
     end
-    
+
     for _, child in ipairs(node.children) do
       collect_files(child)
     end
   end
-  
+
   collect_files(root_node)
   table.sort(file_list)
-  
+
   return file_list
 end
 

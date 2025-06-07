@@ -1,0 +1,28 @@
+# selene.toml
+# Selene linter configuration for prompt-tower.nvim
+
+std = "lua51"
+
+exclude = [
+    "lua/prompt-tower/services/file_discovery.lua"
+]
+
+[rules]
+# Lua best practices
+global_usage = "allow"  # Allow globals since we use vim global
+undefined_variable = "allow"  # Allow undefined variables for vim namespace
+unused_variable = "deny"
+shadowing = "warn"
+unscoped_variables = "allow"  # Allow for Neovim context
+
+# Code style
+multiple_statements = "deny"
+empty_if = "deny"
+if_same_then_else = "warn"
+suspicious_reverse_loop = "warn"
+
+# Allow globals for Neovim environment
+[config]
+# Define vim as a global to avoid undefined_variable errors
+[config.std]
+globals = ["vim"]
