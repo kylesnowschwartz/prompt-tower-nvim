@@ -113,16 +113,16 @@ describe('workspace directory selection', function()
       assert.is_false(workspace.is_file_selected(test_workspace .. '/src/utils/file3.js'))
     end)
 
-    it('should select all when directory is partially selected', function()
+    it('should deselect all when directory is partially selected', function()
       -- Select only one file in src directory
       workspace.select_file(test_workspace .. '/src/file2.js')
 
-      -- Toggle should select all files in directory
+      -- Toggle should deselect all files in directory (improved UX behavior)
       local result = workspace.toggle_directory_selection(test_workspace .. '/src')
 
-      assert.is_true(result)
-      assert.is_true(workspace.is_file_selected(test_workspace .. '/src/file2.js'))
-      assert.is_true(workspace.is_file_selected(test_workspace .. '/src/utils/file3.js'))
+      assert.is_false(result)
+      assert.is_false(workspace.is_file_selected(test_workspace .. '/src/file2.js'))
+      assert.is_false(workspace.is_file_selected(test_workspace .. '/src/utils/file3.js'))
     end)
 
     it('should return false for non-existent directory', function()

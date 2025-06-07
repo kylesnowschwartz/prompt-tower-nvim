@@ -396,14 +396,14 @@ function M.toggle_directory_selection(dir_path)
   -- Get current selection state and toggle accordingly
   local selection_state = dir_node:get_selection_state()
 
-  if selection_state == 'all' then
-    -- Fully selected, so deselect all
-    M.deselect_directory_recursive(dir_path)
-    return false
-  else
-    -- Partially or not selected, so select all
+  if selection_state == 'none' then
+    -- Not selected, so select all
     M.select_directory_recursive(dir_path)
     return true
+  else
+    -- Fully or partially selected, so deselect all
+    M.deselect_directory_recursive(dir_path)
+    return false
   end
 end
 
