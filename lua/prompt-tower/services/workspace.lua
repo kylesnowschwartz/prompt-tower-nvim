@@ -12,6 +12,7 @@ local state = {
   file_trees = {}, -- Cached file trees by workspace
   selected_files = {}, -- Selected file nodes by path
   current_workspace = nil,
+  workspaces_detected = false, -- Track if workspaces have been detected
 }
 
 --- Initialize workspace management
@@ -22,10 +23,18 @@ function M.setup()
     file_trees = {},
     selected_files = {},
     current_workspace = nil,
+    workspaces_detected = false,
   }
 
-  -- Detect workspaces from Neovim
-  M._detect_workspaces()
+  -- Note: Workspace detection is now lazy - will happen on first access
+end
+
+--- Ensure workspaces are detected (lazy initialization)
+local function ensure_workspaces_detected()
+  if not state.workspaces_detected then
+    M._detect_workspaces()
+    state.workspaces_detected = true
+  end
 end
 
 --- Detect workspaces from current Neovim session
@@ -102,12 +111,14 @@ end
 --- Get list of all workspaces
 --- @return string[] List of workspace paths
 function M.get_workspaces()
+  ensure_workspaces_detected()
   return vim.deepcopy(state.workspaces)
 end
 
 --- Get current workspace
 --- @return string? Current workspace path
 function M.get_current_workspace()
+  ensure_workspaces_detected()
   return state.current_workspace
 end
 
@@ -115,6 +126,7 @@ end
 --- @param workspace_path string Workspace path to set as current
 --- @return boolean Success
 function M.set_current_workspace(workspace_path)
+  ensure_workspaces_detected()
   vim.validate('workspace_path', workspace_path, 'string')
 
   if not vim.tbl_contains(state.workspaces, workspace_path) then
@@ -256,6 +268,7 @@ end
 --- @param file_path string File path to select
 --- @return boolean Success
 function M.select_file(file_path)
+  ensure_workspaces_detected()
   vim.validate('file_path', file_path, 'string')
 
   -- Ensure workspace is scanned before trying to find file
@@ -285,6 +298,7 @@ end
 --- @param dir_path string Directory path to select
 --- @return boolean Success
 function M.select_directory_recursive(dir_path)
+  ensure_workspaces_detected()
   vim.validate('dir_path', dir_path, 'string')
 
   -- Ensure workspace is scanned
@@ -320,6 +334,7 @@ end
 --- @param dir_path string Directory path to deselect
 --- @return boolean Success
 function M.deselect_directory_recursive(dir_path)
+  ensure_workspaces_detected()
   vim.validate('dir_path', dir_path, 'string')
 
   -- Find the directory node
@@ -349,6 +364,7 @@ end
 --- @param dir_path string Directory path to toggle
 --- @return boolean New selection state (true if now selected)
 function M.toggle_directory_selection(dir_path)
+  ensure_workspaces_detected()
   vim.validate('dir_path', dir_path, 'string')
 
   -- Find the directory node
@@ -380,6 +396,7 @@ end
 --- @param dir_path string Directory path to check
 --- @return string One of: 'none', 'partial', 'all', or 'not_found'
 function M.get_directory_selection_state(dir_path)
+  ensure_workspaces_detected()
   vim.validate('dir_path', dir_path, 'string')
 
   local dir_node = M.find_file_node(dir_path)
@@ -425,6 +442,7 @@ end
 --- @param file_path string File path to check
 --- @return boolean Whether file is selected
 function M.is_file_selected(file_path)
+  ensure_workspaces_detected()
   vim.validate('file_path', file_path, 'string')
   return state.selected_files[file_path] ~= nil
 end
@@ -503,6 +521,7 @@ function M._reset_state()
     file_trees = {},
     selected_files = {},
     current_workspace = nil,
+    workspaces_detected = false,
   }
 end
 

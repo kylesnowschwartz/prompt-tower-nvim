@@ -6,11 +6,22 @@ local M = {}
 -- Plugin version for compatibility checks
 M.version = '0.1.0'
 
--- Load dependencies
-local config = require('prompt-tower.config')
-local template_engine = require('prompt-tower.services.template_engine')
-local ui = require('prompt-tower.services.ui')
-local workspace = require('prompt-tower.services.workspace')
+-- Lazy load dependencies to improve startup performance
+local function get_config()
+  return require('prompt-tower.config')
+end
+
+local function get_template_engine()
+  return require('prompt-tower.services.template_engine')
+end
+
+local function get_ui()
+  return require('prompt-tower.services.ui')
+end
+
+local function get_workspace()
+  return require('prompt-tower.services.workspace')
+end
 
 -- Internal state (now using workspace service)
 local state = {
@@ -24,10 +35,10 @@ function M.setup(opts)
   vim.validate('opts', opts or {}, 'table')
 
   -- Merge user options with defaults
-  config.setup(opts)
+  get_config().setup(opts)
 
   -- Initialize workspace management
-  workspace.setup()
+  get_workspace().setup()
 
   -- Mark as initialized
   state.initialized = true
@@ -95,7 +106,7 @@ function M.complete_command(arg_lead, cmd_line, _cursor_pos)
 
   -- If we're completing a format command
   if cmd_line:match('^%s*PromptTower%s+format%s') then
-    local formats = config.get_available_formats()
+    local formats = get_config().get_available_formats()
     for _, format in ipairs(formats) do
       if format:sub(1, #arg_lead) == arg_lead then
         table.insert(matches, format)
@@ -129,7 +140,7 @@ function M.select_current_file()
   end
 
   -- Use workspace service for selection
-  local success = workspace.select_file(current_file)
+  local success = get_workspace().select_file(current_file)
   if success then
     vim.notify(
       string.format('Added "%s" to Prompt Tower selection', vim.fn.fnamemodify(current_file, ':t')),
@@ -150,28 +161,28 @@ function M.generate_context()
     return
   end
 
-  local selected_files = workspace.get_selected_files()
+  local selected_files = get_workspace().get_selected_files()
   if #selected_files == 0 then
     vim.notify('No files selected for context generation', vim.log.levels.WARN)
     return
   end
 
   -- Get current workspace and template configuration
-  local current_workspace = workspace.get_current_workspace()
-  local template_config = config.get_template_config()
+  local current_workspace = get_workspace().get_current_workspace()
+  local template_config = get_config().get_template_config()
 
   -- Get root node for tree generation
-  local root_node = workspace.get_file_tree(current_workspace)
+  local root_node = get_workspace().get_file_tree(current_workspace)
 
   -- Generate context using template engine
-  local context = template_engine.generate_context(selected_files, current_workspace, template_config, root_node)
+  local context = get_template_engine().generate_context(selected_files, current_workspace, template_config, root_node)
   state.last_context = context
 
   -- Copy to clipboard
-  local clipboard_register = config.get_value('clipboard.register') or '+'
+  local clipboard_register = get_config().get_value('clipboard.register') or '+'
   vim.fn.setreg(clipboard_register, context)
 
-  local current_format = config.get_current_format()
+  local current_format = get_config().get_current_format()
   vim.notify(
     string.format('Generated %s context with %d files and copied to clipboard', current_format, #selected_files),
     vim.log.levels.INFO
@@ -185,8 +196,8 @@ function M.clear_selection()
     return
   end
 
-  local count = workspace.get_selection_count()
-  workspace.clear_selections()
+  local count = get_workspace().get_selection_count()
+  get_workspace().clear_selections()
 
   vim.notify(string.format('Cleared %d files from selection', count), vim.log.levels.INFO)
 end
@@ -205,8 +216,8 @@ function M.toggle_selection(filepath)
     return
   end
 
-  local was_selected = workspace.is_file_selected(target_file)
-  local new_state = workspace.toggle_file_selection(target_file)
+  local was_selected = get_workspace().is_file_selected(target_file)
+  local new_state = get_workspace().toggle_file_selection(target_file)
 
   if new_state and not was_selected then
     vim.notify(string.format('Added "%s" to selection', vim.fn.fnamemodify(target_file, ':t')), vim.log.levels.INFO)
@@ -232,7 +243,7 @@ function M._reset_state()
     initialized = false,
     last_context = nil,
   }
-  workspace._reset_state()
+  get_workspace()._reset_state()
 end
 
 --- Open the visual UI interface
@@ -242,30 +253,30 @@ function M.open_ui()
     return
   end
 
-  ui.open()
+  get_ui().open()
 end
 
 --- Check if UI is open
 --- @return boolean
 function M.is_ui_open()
-  return ui.is_open()
+  return get_ui().is_open()
 end
 
 --- Close UI interface
 function M.close_ui()
-  ui.close_ui()
+  get_ui().close_ui()
 end
 
 --- Get workspace service for testing
 --- @return table Workspace service
 function M._get_workspace()
-  return workspace
+  return get_workspace()
 end
 
 --- Get UI service for testing
 --- @return table UI service
 function M._get_ui()
-  return ui
+  return get_ui()
 end
 
 --- Set template format (hot-swap)
@@ -276,7 +287,7 @@ function M.set_template_format(format)
     return
   end
 
-  local success, err = pcall(config.set_current_format, format)
+  local success, err = pcall(get_config().set_current_format, format)
   if success then
     vim.notify(string.format('Switched to %s template format', format), vim.log.levels.INFO)
   else
@@ -291,8 +302,8 @@ function M.show_current_format()
     return
   end
 
-  local current_format = config.get_current_format()
-  local available_formats = config.get_available_formats()
+  local current_format = get_config().get_current_format()
+  local available_formats = get_config().get_available_formats()
 
   vim.notify(
     string.format('Current format: %s\nAvailable formats: %s', current_format, table.concat(available_formats, ', ')),

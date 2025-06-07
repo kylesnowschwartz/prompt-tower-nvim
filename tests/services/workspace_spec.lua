@@ -45,6 +45,7 @@ describe('workspace directory selection', function()
     state.current_workspace = test_workspace
     state.workspaces = { test_workspace }
     state.file_trees = { [test_workspace] = mock_tree }
+    state.workspaces_detected = true -- Prevent lazy detection from overriding mocks
   end)
 
   after_each(function()
