@@ -6,6 +6,74 @@ local config = require('prompt-tower.config')
 
 local M = {}
 
+--- Recursively scan a directory
+--- @param parent_node FileNode Parent directory node
+--- @param current_depth number Current scanning depth
+--- @param max_depth number Maximum depth to scan
+--- @param ignore_patterns table Ignore patterns to apply
+--- @param opts table Scanning options
+local function _scan_recursive(parent_node, current_depth, max_depth, ignore_patterns, opts)
+  if current_depth >= max_depth then
+    return
+  end
+
+  local handle = vim.loop.fs_scandir(parent_node.path)
+  if not handle then
+    -- Cannot read directory (permission issues, etc.)
+    return
+  end
+
+  while true do
+    local name, type = vim.loop.fs_scandir_next(handle)
+    if not name then
+      break
+    end
+
+    -- Skip hidden files unless requested
+    if not opts.include_hidden and name:sub(1, 1) == '.' then
+      goto continue
+    end
+
+    -- Properly join paths, avoiding double slashes
+    local full_path
+    if parent_node.path:sub(-1) == '/' then
+      full_path = parent_node.path .. name
+    else
+      full_path = parent_node.path .. '/' .. name
+    end
+
+    -- Create child node
+    local child_node = FileNode.new({
+      path = full_path,
+      name = name,
+      type = type == 'directory' and FileNode.TYPE.DIRECTORY or FileNode.TYPE.FILE,
+    })
+
+    -- Check ignore patterns
+    if M._should_ignore(child_node, ignore_patterns) then
+      goto continue
+    end
+
+    -- Check file size limits for files
+    if child_node:is_file() then
+      local max_size_bytes = config.get_value('max_file_size_kb') * 1024
+      if child_node.size > max_size_bytes then
+        goto continue
+      end
+    end
+
+    -- Add to parent
+    parent_node:add_child(child_node)
+
+    -- Recursively scan directories
+    if child_node:is_directory() then
+      _scan_recursive(child_node, current_depth + 1, max_depth, ignore_patterns, opts)
+    end
+
+    ::continue::
+  end
+end
+
 --- Scan a directory and return a file tree
 --- @param root_path string Root directory to scan
 --- @param opts? table Options for scanning
@@ -48,68 +116,6 @@ function M.scan_directory(root_path, opts)
   _scan_recursive(root_node, 0, opts.max_depth, ignore_patterns, opts)
 
   return root_node
-end
-
---- Recursively scan a directory
---- @param parent_node FileNode Parent directory node
---- @param current_depth number Current scanning depth
---- @param max_depth number Maximum depth to scan
---- @param ignore_patterns table Ignore patterns to apply
---- @param opts table Scanning options
-local function _scan_recursive(parent_node, current_depth, max_depth, ignore_patterns, opts)
-  if current_depth >= max_depth then
-    return
-  end
-
-  local handle = vim.loop.fs_scandir(parent_node.path)
-  if not handle then
-    -- Cannot read directory (permission issues, etc.)
-    return
-  end
-
-  while true do
-    local name, type = vim.loop.fs_scandir_next(handle)
-    if not name then
-      break
-    end
-
-    -- Skip hidden files unless requested
-    if not opts.include_hidden and name:sub(1, 1) == '.' then
-      goto continue
-    end
-
-    local full_path = parent_node.path .. '/' .. name
-
-    -- Create child node
-    local child_node = FileNode.new({
-      path = full_path,
-      name = name,
-      type = type == 'directory' and FileNode.TYPE.DIRECTORY or FileNode.TYPE.FILE,
-    })
-
-    -- Check ignore patterns
-    if M._should_ignore(child_node, ignore_patterns) then
-      goto continue
-    end
-
-    -- Check file size limits for files
-    if child_node:is_file() then
-      local max_size_bytes = config.get_value('max_file_size_kb') * 1024
-      if child_node.size > max_size_bytes then
-        goto continue
-      end
-    end
-
-    -- Add to parent
-    parent_node:add_child(child_node)
-
-    -- Recursively scan directories
-    if child_node:is_directory() then
-      _scan_recursive(child_node, current_depth + 1, max_depth, ignore_patterns, opts)
-    end
-
-    ::continue::
-  end
 end
 
 --- Load ignore patterns from various sources

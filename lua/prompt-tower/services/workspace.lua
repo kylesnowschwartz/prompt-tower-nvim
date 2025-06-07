@@ -258,6 +258,12 @@ end
 function M.select_file(file_path)
   vim.validate('file_path', file_path, 'string')
 
+  -- Ensure workspace is scanned before trying to find file
+  local current_workspace = state.current_workspace
+  if current_workspace and not state.file_trees[current_workspace] then
+    M.scan_workspace(current_workspace)
+  end
+
   -- Find the file node
   local file_node = M.find_file_node(file_path)
   if not file_node then
