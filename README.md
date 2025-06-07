@@ -20,7 +20,7 @@ A Neovim plugin for creating AI-ready context from your codebase.
 
 ```lua
 {
-  'kylesnowschwartz/prompt-tower-nvim',
+  'kylesnowschwartz/prompt-tower.nvim',
   config = function()
     require('prompt-tower').setup({
       -- Configuration options (see below)
@@ -33,7 +33,7 @@ A Neovim plugin for creating AI-ready context from your codebase.
 
 ```lua
 use {
-  'kylesnowschwartz/prompt-tower-nvim',
+  'kylesnowschwartz/prompt-tower.nvim',
   config = function()
     require('prompt-tower').setup()
   end

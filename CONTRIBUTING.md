@@ -40,7 +40,7 @@ make ci
 ## Project Structure
 
 ```
-prompt-tower-nvim/
+prompt-tower.nvim/
 ├── lua/prompt-tower/
 │   ├── init.lua              # Main entry point
 │   ├── config.lua            # Configuration management

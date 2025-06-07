@@ -2,7 +2,7 @@
 
 ## 🚀 Current Status: 75% Complete!
 
-**Major Milestone Achieved**: Phases 1-3 are now fully implemented, bringing prompt-tower-nvim to **feature parity with VSCode** for core functionality.
+**Major Milestone Achieved**: Phases 1-3 are now fully implemented, bringing prompt-tower.nvim to **feature parity with VSCode** for core functionality.
 
 ### ✅ **What's Working Now:**
 - **Professional UI** with NeoTree-inspired interface, tab-cycling between 4 windows, and context-aware help system (`?` key)
@@ -22,7 +22,7 @@
 
 ## Executive Summary
 
-Based on our comprehensive analysis and recent development progress, prompt-tower-nvim currently provides ~75% of prompt-tower-vscode's functionality. This roadmap outlines a structured approach to achieve feature parity and add Neovim-specific enhancements.
+Based on our comprehensive analysis and recent development progress, prompt-tower.nvim currently provides ~75% of prompt-tower-vscode's functionality. This roadmap outlines a structured approach to achieve feature parity and add Neovim-specific enhancements.
 
 **Current State**: ✅ Advanced template system, ✅ Project tree integration, ✅ Hierarchical selection, ✅ Multi-workspace backend, ✅ Professional UI with tab-cycling
 **Target State**: Full feature parity with GitHub integration, persistence, plus Neovim-specific enhancements
@@ -524,7 +524,7 @@ _Features that go beyond VSCode parity_
 
 ## 🎉 Major Progress Update
 
-**Phases 1-3 are now COMPLETE!** prompt-tower-nvim has transformed from a basic file selection tool into a sophisticated, feature-rich context management system that **already matches most VSCode capabilities**.
+**Phases 1-3 are now COMPLETE!** prompt-tower.nvim has transformed from a basic file selection tool into a sophisticated, feature-rich context management system that **already matches most VSCode capabilities**.
 
 ### ✅ **Recently Completed Features:**
 - **Professional UI**: NeoTree-inspired interface with tab-cycling, help system accessible from all windows
