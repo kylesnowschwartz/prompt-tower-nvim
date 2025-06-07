@@ -1454,3 +1454,102 @@ Could not read file: /var/folders/s0/yyll29gs201_snw8ct3bx8gh0000gp/T/nvim.kyle/
  12: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/plugin/netrwPlugin.vim
  13: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/plugin/rplugin.vim
 Starting...
+Could not select "test_file.txt" - file not found in workspace
+Added "README.md" to Prompt Tower selection
+No file in current buffer
+Added "README.md" to selection
+Added "README.md" to selection
+Removed "README.md" from selection
+Added "Makefile" to selection
+Added "README.md" to selection
+Added "Makefile" to selection
+Cleared 2 files from selection
+Added "README.md" to selection
+Generated xml context with 1 files and copied to clipboard
+No files selected for context generation
+Added "README.md" to selection
+Generated xml context with 1 files and copied to clipboard
+Error detected while processing command line:Could not read file: /non/existent/file.txt
+Added "README.md" to selection
+Error detected while processing command line:Could not read file: /non/existent/file.txt
+Could not read file: /var/folders/s0/yyll29gs201_snw8ct3bx8gh0000gp/T/nvim.kyle/IwcvDn/14/missing.txt
+  1: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/ftplugin.vim
+  2: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/indent.vim
+  3: ~/Code/prompt-tower-nvim/tests/minimal_init.lua
+  4: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/filetype.lua
+  5: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/syntax/syntax.vim
+  6: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/syntax/synload.vim
+  7: ~/Code/prompt-tower-nvim/plugin/prompt-tower.lua
+  8: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/plugin/gzip.vim
+  9: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/plugin/matchit.vim
+ 10: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/pack/dist/opt/matchit/plugin/matchit.vim
+ 11: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/plugin/matchparen.vim
+ 12: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/plugin/netrwPlugin.vim
+ 13: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/plugin/rplugin.vim
+Starting...
+Could not select "test_file.txt" - file not found in workspace
+Added "README.md" to Prompt Tower selection
+No file in current buffer
+Added "README.md" to selection
+Added "README.md" to selection
+Removed "README.md" from selection
+Added "Makefile" to selection
+Added "README.md" to selection
+Added "Makefile" to selection
+Cleared 2 files from selection
+Added "README.md" to selection
+Generated xml context with 1 files and copied to clipboard
+No files selected for context generation
+Added "README.md" to selection
+Generated xml context with 1 files and copied to clipboard
+Error detected while processing command line:Could not read file: /non/existent/file.txt
+Added "README.md" to selection
+Error detected while processing command line:Could not read file: /non/existent/file.txt
+Could not read file: /var/folders/s0/yyll29gs201_snw8ct3bx8gh0000gp/T/nvim.kyle/ubGM4b/14/missing.txt
+  1: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/ftplugin.vim
+  2: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/indent.vim
+  3: ~/Code/prompt-tower-nvim/tests/minimal_init.lua
+  4: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/filetype.lua
+  5: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/syntax/syntax.vim
+  6: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/syntax/synload.vim
+  7: ~/Code/prompt-tower-nvim/plugin/prompt-tower.lua
+  8: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/plugin/gzip.vim
+  9: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/plugin/matchit.vim
+ 10: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/pack/dist/opt/matchit/plugin/matchit.vim
+ 11: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/plugin/matchparen.vim
+ 12: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/plugin/netrwPlugin.vim
+ 13: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/plugin/rplugin.vim
+Starting...
+Could not select "test_file.txt" - file not found in workspace
+Added "README.md" to Prompt Tower selection
+No file in current buffer
+Added "README.md" to selection
+Added "README.md" to selection
+Removed "README.md" from selection
+Added "Makefile" to selection
+Added "README.md" to selection
+Added "Makefile" to selection
+Cleared 2 files from selection
+Added "README.md" to selection
+Generated xml context with 1 files and copied to clipboard
+No files selected for context generation
+Added "README.md" to selection
+Generated xml context with 1 files and copied to clipboard
+Error detected while processing command line:Could not read file: /non/existent/file.txt
+Added "README.md" to selection
+Error detected while processing command line:Could not read file: /non/existent/file.txt
+Could not read file: /var/folders/s0/yyll29gs201_snw8ct3bx8gh0000gp/T/nvim.kyle/it8cgS/14/missing.txt
+  1: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/ftplugin.vim
+  2: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/indent.vim
+  3: ~/Code/prompt-tower-nvim/tests/minimal_init.lua
+  4: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/filetype.lua
+  5: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/syntax/syntax.vim
+  6: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/syntax/synload.vim
+  7: ~/Code/prompt-tower-nvim/plugin/prompt-tower.lua
+  8: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/plugin/gzip.vim
+  9: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/plugin/matchit.vim
+ 10: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/pack/dist/opt/matchit/plugin/matchit.vim
+ 11: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/plugin/matchparen.vim
+ 12: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/plugin/netrwPlugin.vim
+ 13: /usr/local/Cellar/neovim/0.11.2/share/nvim/runtime/plugin/rplugin.vim
+Starting...

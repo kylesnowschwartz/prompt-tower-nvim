@@ -233,6 +233,11 @@ function M:set_selected_recursive(selected)
     self.selected = selected
   end
 
+  -- Set directory selection state for directories
+  if self:is_directory() then
+    self.directory_selected = selected
+  end
+
   -- Recursively set selection for all children
   for _, child in ipairs(self.children) do
     child:set_selected_recursive(selected)
@@ -249,7 +254,8 @@ function M:get_selection_state()
   -- For directories, check children
   local all_files = self:get_all_files()
   if #all_files == 0 then
-    return 'none'
+    -- Empty directory: check if it was explicitly selected
+    return (self.directory_selected == true) and 'all' or 'none'
   end
 
   local selected_count = 0
@@ -271,11 +277,19 @@ end
 --- Select all descendants (files only)
 function M:select_recursive()
   self:set_selected_recursive(true)
+  -- Mark directory as explicitly selected (important for empty directories)
+  if self:is_directory() then
+    self.directory_selected = true
+  end
 end
 
 --- Deselect all descendants (files only)
 function M:deselect_recursive()
   self:set_selected_recursive(false)
+  -- Mark directory as explicitly deselected
+  if self:is_directory() then
+    self.directory_selected = false
+  end
 end
 
 --- Toggle recursive selection

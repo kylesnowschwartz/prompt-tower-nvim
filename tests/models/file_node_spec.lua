@@ -435,6 +435,21 @@ describe('FileNode', function()
         assert.equals('none', empty_dir:get_selection_state())
       end)
 
+      it('should handle selection state for empty directories', function()
+        local empty_dir = FileNode.new({ path = '/tmp/empty', type = FileNode.TYPE.DIRECTORY })
+
+        -- Initially should be 'none'
+        assert.equals('none', empty_dir:get_selection_state())
+
+        -- After selecting recursively, should be 'all'
+        empty_dir:select_recursive()
+        assert.equals('all', empty_dir:get_selection_state())
+
+        -- After deselecting, should be 'none' again
+        empty_dir:deselect_recursive()
+        assert.equals('none', empty_dir:get_selection_state())
+      end)
+
       it('should handle single file in directory', function()
         local single_file_dir = FileNode.new({ path = '/tmp/single', type = FileNode.TYPE.DIRECTORY })
         local single_file = FileNode.new({ path = '/tmp/single/file.txt' })
