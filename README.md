@@ -21,9 +21,6 @@ A Neovim plugin for creating AI-ready context from your codebase. Inspired by th
 ```lua
 {
   'kylesnowschwartz/prompt-tower-nvim',
-  dependencies = {
-    'nvim-lua/plenary.nvim', -- Required for file operations
-  },
   config = function()
     require('prompt-tower').setup({
       -- Configuration options (see below)
@@ -37,9 +34,6 @@ A Neovim plugin for creating AI-ready context from your codebase. Inspired by th
 ```lua
 use {
   'kylesnowschwartz/prompt-tower-nvim',
-  requires = {
-    'nvim-lua/plenary.nvim',
-  },
   config = function()
     require('prompt-tower').setup()
   end
@@ -235,6 +229,8 @@ The `.towerignore` file uses the same syntax as `.gitignore` files and supports:
 - Comments (`# This is a comment`)
 
 ## Development
+
+**Note**: The plugin has **no runtime dependencies** and uses only standard Neovim APIs. [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) is only required for running tests during development.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing, architecture details, and contribution guidelines.
 

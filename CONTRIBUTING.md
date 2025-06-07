@@ -6,8 +6,11 @@ Thank you for your interest in contributing to prompt-tower.nvim!
 
 ### Requirements
 
+**Runtime:**
 - Neovim 0.8+
-- [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) for testing
+
+**Development/Testing:**
+- [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) for the testing framework
 
 ### Development Dependencies
 
