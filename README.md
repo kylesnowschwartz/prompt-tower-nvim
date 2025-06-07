@@ -81,9 +81,9 @@ You can also use the main `:PromptTower` command with subcommands:
 
 ```vim
 :PromptTower ui          \" Open UI interface (default)
-:PromptTower select      \" Add current file to selection (legacy)
-:PromptTower generate    \" Generate context (legacy)
-:PromptTower clear       \" Clear selections (legacy)
+:PromptTower select      \" Add current file to selection
+:PromptTower generate    \" Generate context
+:PromptTower clear       \" Clear selections
 :PromptTower format xml  \" Switch to XML template format
 :PromptTower format markdown  \" Switch to Markdown template format
 :PromptTower format minimal   \" Switch to minimal template format
@@ -119,7 +119,7 @@ require('prompt-tower').setup({
       template = '<context>\\n{githubIssues}{treeBlock}<project_files>\\n{blocks}\\n</project_files>\\n</context>',
     },
 
-    -- Legacy presets (for backward compatibility)
+    -- Template presets
     presets = {
       xml = {
         block_template = '<file name="{fileNameWithExtension}" path="{rawFilePath}">\\n{fileContent}\\n</file>',
