@@ -502,11 +502,22 @@ end
 
 --- Handle tree selection/toggle
 function M.tree_select_file()
-  if #state.tree_lines == 0 or state.cursor_line > #state.tree_lines then
+  if #state.tree_lines == 0 then
     return
   end
 
-  local line_data = state.tree_lines[state.cursor_line]
+  -- Get actual cursor position from window to handle user navigation
+  local cursor_pos = vim.api.nvim_win_get_cursor(state.windows.tree)
+  local actual_line = cursor_pos[1]
+
+  -- Update our tracked position
+  state.cursor_line = actual_line
+
+  if actual_line > #state.tree_lines then
+    return
+  end
+
+  local line_data = state.tree_lines[actual_line]
   local node = line_data.node
 
   if node:is_directory() then
@@ -521,11 +532,22 @@ end
 
 --- Toggle folder expansion in tree
 function M.tree_toggle_folder()
-  if #state.tree_lines == 0 or state.cursor_line > #state.tree_lines then
+  if #state.tree_lines == 0 then
     return
   end
 
-  local line_data = state.tree_lines[state.cursor_line]
+  -- Get actual cursor position from window to handle user navigation
+  local cursor_pos = vim.api.nvim_win_get_cursor(state.windows.tree)
+  local actual_line = cursor_pos[1]
+
+  -- Update our tracked position
+  state.cursor_line = actual_line
+
+  if actual_line > #state.tree_lines then
+    return
+  end
+
+  local line_data = state.tree_lines[actual_line]
   local node = line_data.node
 
   if node:is_directory() then
