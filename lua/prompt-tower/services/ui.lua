@@ -445,10 +445,10 @@ function M.refresh_tree()
         -- For directories, show selection state
         local selection_state = workspace.get_directory_selection_state(node.path)
         if selection_state == 'all' then
-          selected_mark = ' ⬜' -- Fully selected
+          selected_mark = ' ●' -- Fully selected
           is_selected = true
         elseif selection_state == 'partial' then
-          selected_mark = ' ◐' -- Partially selected
+          selected_mark = ' ◑' -- Partially selected
           is_selected = true
         end
         -- No mark for 'none' state
@@ -812,8 +812,8 @@ function M.show_help()
     '',
     'Selection Indicators:',
     '  ✓         Selected file',
-    '  ◐         Partially selected dir',
-    '  ⬜        Fully selected dir',
+    '  ●         Fully selected dir',
+    '  ◑         Partially selected dir',
     '',
     'File Status:',
     '  Red text  Oversized file (cannot select)',
