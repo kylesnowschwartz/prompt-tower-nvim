@@ -2,11 +2,11 @@
 -- Tests for the configuration module
 
 local config = require('prompt-tower.config')
+local helpers = require('tests.helpers')
 
 describe('prompt-tower.config', function()
   before_each(function()
-    -- Reset configuration before each test
-    config.reset()
+    helpers.setup.reset_config()
   end)
 
   describe('setup', function()

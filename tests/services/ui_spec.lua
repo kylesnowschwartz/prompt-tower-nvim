@@ -1,15 +1,12 @@
 -- tests/services/ui_spec.lua
 -- Tests for the UI service
 
-local FileNode = require('prompt-tower.models.file_node')
+local helpers = require('tests.helpers')
 local ui = require('prompt-tower.services.ui')
-local workspace = require('prompt-tower.services.workspace')
 
 describe('UI service', function()
   before_each(function()
-    -- Reset UI state before each test
-    ui._reset_state()
-    workspace._reset_state()
+    helpers.setup.reset_ui()
   end)
 
   describe('tree_select_file', function()
@@ -18,18 +15,8 @@ describe('UI service', function()
     local original_win_get_cursor, original_win_is_valid
 
     before_each(function()
-      -- Create mock nodes
-      file_node = FileNode.new({
-        path = '/test/file.txt',
-        name = 'file.txt',
-        type = FileNode.TYPE.FILE,
-      })
-
-      dir_node = FileNode.new({
-        path = '/test/dir',
-        name = 'dir',
-        type = FileNode.TYPE.DIRECTORY,
-      })
+      file_node = helpers.mocks.create_file_node()
+      dir_node = helpers.mocks.create_dir_node()
 
       -- Mock window handle
       mock_tree_window = 123
@@ -195,12 +182,7 @@ describe('UI service', function()
     local original_win_get_cursor, original_win_is_valid
 
     before_each(function()
-      -- Create mock directory node
-      dir_node = FileNode.new({
-        path = '/test/dir',
-        name = 'dir',
-        type = FileNode.TYPE.DIRECTORY,
-      })
+      dir_node = helpers.mocks.create_dir_node()
 
       -- Mock window handle
       mock_tree_window = 123

@@ -1,11 +1,11 @@
 -- tests/init_spec.lua
 -- Tests for the main init module
 
+local helpers = require('tests.helpers')
 local prompt_tower = require('prompt-tower')
 
 describe('prompt-tower.init', function()
   before_each(function()
-    -- Reset state before each test
     prompt_tower._reset_state()
   end)
 
@@ -53,32 +53,26 @@ describe('prompt-tower.init', function()
     it('should add current file to selection', function()
       prompt_tower.setup()
 
-      -- Create a test buffer with a file that exists in our test workspace
-      local test_file = vim.fn.getcwd() .. '/README.md'
-      local buf = vim.api.nvim_create_buf(false, false)
-      vim.api.nvim_buf_set_name(buf, test_file)
-      vim.api.nvim_set_current_buf(buf)
+      local test_file = helpers.fs.get_real_workspace_file(helpers.TEST_PATHS.readme)
+      helpers.fs.create_test_buffer(test_file)
 
       prompt_tower.select_current_file()
 
       local workspace = prompt_tower._get_workspace()
-      assert.is_true(workspace.is_file_selected(test_file))
+      helpers.assert.file_selected(workspace, test_file)
     end)
 
     it('should handle empty buffer name gracefully', function()
       prompt_tower.setup()
 
-      -- Create a buffer without a name
-      local buf = vim.api.nvim_create_buf(false, false)
-      vim.api.nvim_set_current_buf(buf)
+      helpers.fs.create_test_buffer('')
 
-      -- Should not error, but should show warning
       assert.has_no_error(function()
         prompt_tower.select_current_file()
       end)
 
       local workspace = prompt_tower._get_workspace()
-      assert.equals(0, workspace.get_selection_count())
+      helpers.assert.selection_count(workspace, 0)
     end)
   end)
 

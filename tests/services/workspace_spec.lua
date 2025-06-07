@@ -1,55 +1,17 @@
 -- tests/services/workspace_spec.lua
 -- Tests for the workspace service directory selection functionality
 
-local FileNode = require('prompt-tower.models.file_node')
+local helpers = require('tests.helpers')
 local workspace = require('prompt-tower.services.workspace')
 
 describe('workspace directory selection', function()
-  local test_workspace = '/tmp/test_workspace'
+  local test_workspace = helpers.TEST_PATHS.workspace
   local mock_tree
 
   before_each(function()
-    -- Reset workspace state
-    workspace._reset_state()
-    workspace.setup()
-
-    -- Create mock file tree structure:
-    -- test_workspace/
-    --   file1.txt
-    --   src/
-    --     file2.js
-    --     utils/
-    --       file3.js
-    --   docs/
-    --     file4.md
-    mock_tree = FileNode.new({ path = test_workspace, type = FileNode.TYPE.DIRECTORY })
-
-    local file1 = FileNode.new({ path = test_workspace .. '/file1.txt' })
-    local src_dir = FileNode.new({ path = test_workspace .. '/src', type = FileNode.TYPE.DIRECTORY })
-    local file2 = FileNode.new({ path = test_workspace .. '/src/file2.js' })
-    local utils_dir = FileNode.new({ path = test_workspace .. '/src/utils', type = FileNode.TYPE.DIRECTORY })
-    local file3 = FileNode.new({ path = test_workspace .. '/src/utils/file3.js' })
-    local docs_dir = FileNode.new({ path = test_workspace .. '/docs', type = FileNode.TYPE.DIRECTORY })
-    local file4 = FileNode.new({ path = test_workspace .. '/docs/file4.md' })
-
-    mock_tree:add_child(file1)
-    mock_tree:add_child(src_dir)
-    mock_tree:add_child(docs_dir)
-    src_dir:add_child(file2)
-    src_dir:add_child(utils_dir)
-    utils_dir:add_child(file3)
-    docs_dir:add_child(file4)
-
-    -- Mock the workspace state with our test tree
-    local state = workspace._get_state()
-    state.current_workspace = test_workspace
-    state.workspaces = { test_workspace }
-    state.file_trees = { [test_workspace] = mock_tree }
-    state.workspaces_detected = true -- Prevent lazy detection from overriding mocks
-  end)
-
-  after_each(function()
-    workspace._reset_state()
+    helpers.setup.reset_workspace()
+    mock_tree = helpers.mocks.create_workspace_tree(test_workspace)
+    helpers.mocks.setup_workspace_state(mock_tree, test_workspace)
   end)
 
   describe('select_directory_recursive', function()
@@ -57,20 +19,20 @@ describe('workspace directory selection', function()
       local success = workspace.select_directory_recursive(test_workspace .. '/src')
 
       assert.is_true(success)
-      assert.is_true(workspace.is_file_selected(test_workspace .. '/src/file2.js'))
-      assert.is_true(workspace.is_file_selected(test_workspace .. '/src/utils/file3.js'))
-      assert.is_false(workspace.is_file_selected(test_workspace .. '/file1.txt'))
-      assert.is_false(workspace.is_file_selected(test_workspace .. '/docs/file4.md'))
+      helpers.assert.file_selected(workspace, test_workspace .. '/src/file2.js')
+      helpers.assert.file_selected(workspace, test_workspace .. '/src/utils/file3.js')
+      helpers.assert.file_not_selected(workspace, test_workspace .. '/file1.txt')
+      helpers.assert.file_not_selected(workspace, test_workspace .. '/docs/file4.md')
     end)
 
     it('should select all files in root directory', function()
       local success = workspace.select_directory_recursive(test_workspace)
 
       assert.is_true(success)
-      assert.is_true(workspace.is_file_selected(test_workspace .. '/file1.txt'))
-      assert.is_true(workspace.is_file_selected(test_workspace .. '/src/file2.js'))
-      assert.is_true(workspace.is_file_selected(test_workspace .. '/src/utils/file3.js'))
-      assert.is_true(workspace.is_file_selected(test_workspace .. '/docs/file4.md'))
+      helpers.assert.file_selected(workspace, test_workspace .. '/file1.txt')
+      helpers.assert.file_selected(workspace, test_workspace .. '/src/file2.js')
+      helpers.assert.file_selected(workspace, test_workspace .. '/src/utils/file3.js')
+      helpers.assert.file_selected(workspace, test_workspace .. '/docs/file4.md')
     end)
 
     it('should return false for non-existent directory', function()
@@ -84,7 +46,7 @@ describe('workspace directory selection', function()
     end)
 
     it('should handle empty directories', function()
-      local empty_dir = FileNode.new({ path = test_workspace .. '/empty', type = FileNode.TYPE.DIRECTORY })
+      local empty_dir = helpers.mocks.create_empty_dir(test_workspace .. '/empty')
       mock_tree:add_child(empty_dir)
 
       local success = workspace.select_directory_recursive(test_workspace .. '/empty')
@@ -214,7 +176,7 @@ describe('workspace directory selection', function()
     end)
 
     it('should handle empty directories', function()
-      local empty_dir = FileNode.new({ path = test_workspace .. '/empty', type = FileNode.TYPE.DIRECTORY })
+      local empty_dir = helpers.mocks.create_empty_dir(test_workspace .. '/empty')
       mock_tree:add_child(empty_dir)
 
       local state = workspace.get_directory_selection_state(test_workspace .. '/empty')
