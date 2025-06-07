@@ -343,6 +343,10 @@ function M.open()
   create_windows()
   setup_keymaps()
 
+  -- Ensure text windows have correct options
+  set_text_window_options('top_text')
+  set_text_window_options('bottom_text')
+
   -- Populate initial content
   M.refresh_tree()
   M.refresh_selection()
@@ -813,6 +817,19 @@ function M.show_help()
   })
 end
 
+--- Set window options for text input windows to disable line numbers
+--- @param window_name string The name of the window (top_text or bottom_text)
+local function set_text_window_options(window_name)
+  if window_name == 'top_text' or window_name == 'bottom_text' then
+    local win = state.windows[window_name]
+    if win and vim.api.nvim_win_is_valid(win) then
+      vim.api.nvim_win_set_option(win, 'number', false)
+      vim.api.nvim_win_set_option(win, 'relativenumber', false)
+      vim.api.nvim_win_set_option(win, 'signcolumn', 'no')
+    end
+  end
+end
+
 --- Cycle focus between UI windows (Tab functionality)
 function M.cycle_focus()
   if not state.is_open then
@@ -833,6 +850,8 @@ function M.cycle_focus()
 
   if next_window and vim.api.nvim_win_is_valid(next_window) then
     vim.api.nvim_set_current_win(next_window)
+    -- Ensure line numbers are disabled in text windows
+    set_text_window_options(next_window_name)
   end
 end
 
@@ -856,6 +875,8 @@ function M.cycle_focus_reverse()
 
   if prev_window and vim.api.nvim_win_is_valid(prev_window) then
     vim.api.nvim_set_current_win(prev_window)
+    -- Ensure line numbers are disabled in text windows
+    set_text_window_options(prev_window_name)
   end
 end
 
