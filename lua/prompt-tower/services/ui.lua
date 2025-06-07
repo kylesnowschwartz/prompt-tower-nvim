@@ -1,8 +1,13 @@
 -- lua/prompt-tower/services/ui.lua
 -- UI service for managing the visual file selection interface
+-- Incorporates visual enhancements adapted from lir.nvim
 
 local config = require('prompt-tower.config')
 local workspace = require('prompt-tower.services.workspace')
+
+-- Devicons integration (adapted from lir.nvim)
+local has_devicons, devicons = pcall(require, 'nvim-web-devicons')
+local devicons_ns = vim.api.nvim_create_namespace('prompt_tower_devicons')
 
 local M = {}
 
@@ -32,6 +37,84 @@ local state = {
   cursor_line = 1,
 }
 
+--- Setup devicons and highlight groups (adapted from lir.nvim)
+local function setup_devicons()
+  if not has_devicons then
+    return false
+  end
+
+  local folder_icon = devicons.get_icon('lir_folder_icon')
+  if folder_icon == nil then
+    devicons.set_icon({
+      lir_folder_icon = {
+        icon = '󰉋',
+        color = '#7ebae4',
+        name = 'LirFolderNode',
+      },
+    })
+  end
+
+  -- Setup highlight groups
+  vim.api.nvim_set_hl(0, 'LirDir', { link = 'Directory' })
+  vim.api.nvim_set_hl(0, 'PromptTowerSelected', { bg = '#3d4220', fg = '#a6da95' })
+
+  return true
+end
+
+--- Get icon and highlight for file (adapted from lir.nvim)
+--- @param filename string
+--- @param is_dir boolean
+--- @return string icon, string highlight_name
+local function get_file_icon(filename, is_dir)
+  if not has_devicons then
+    return is_dir and '📁' or '📄', ''
+  end
+
+  if is_dir then
+    return devicons.get_icon('lir_folder_icon', '', { default = true })
+  else
+    return devicons.get_icon(filename, string.match(filename, '%a+$'), { default = true })
+  end
+end
+
+--- Update highlight groups for icons and directories in tree buffer (adapted from lir.nvim)
+--- @param line_data table[] Array of line data with icon information
+local function update_tree_highlights(line_data)
+  if not state.buffers.tree then
+    return
+  end
+
+  -- Clear existing highlights
+  vim.api.nvim_buf_clear_namespace(state.buffers.tree, devicons_ns, 0, -1)
+
+  for i, line_info in ipairs(line_data) do
+    -- Highlight directories with LirDir highlight group
+    if line_info.is_directory then
+      vim.api.nvim_buf_add_highlight(state.buffers.tree, devicons_ns, 'LirDir', i - 1, 0, -1)
+    end
+
+    -- Highlight file icons if devicons available
+    if has_devicons and line_info.icon_highlight and line_info.icon_highlight ~= '' then
+      local icon_start = string.find(line_info.text, line_info.icon) or 0
+      local icon_end = icon_start + vim.fn.strlen(line_info.icon)
+
+      vim.api.nvim_buf_add_highlight(
+        state.buffers.tree,
+        devicons_ns,
+        line_info.icon_highlight,
+        i - 1,
+        icon_start,
+        icon_end
+      )
+    end
+
+    -- Highlight selected files
+    if line_info.is_selected then
+      vim.api.nvim_buf_add_highlight(state.buffers.tree, devicons_ns, 'PromptTowerSelected', i - 1, 0, -1)
+    end
+  end
+end
+
 --- Calculate window layout dimensions
 --- @return table Layout configuration
 local function calculate_layout()
@@ -39,16 +122,17 @@ local function calculate_layout()
   local ui_height = vim.o.lines
 
   -- Reserve space for command line and status
-  local available_height = ui_height - 4
-  local available_width = ui_width - 4
+  local available_height = ui_height - 6
+  local available_width = ui_width - 6
 
-  -- Text input areas take 3 lines each + 1 line separator
-  local text_input_height = 7 -- 3 + 1 + 3
-  local tree_height = available_height - text_input_height
+  -- Text input areas: make them taller and more usable
+  local text_input_height = 8 -- Give more space for actual content
+  local gap_between = 2 -- Gap between tree area and text inputs
+  local tree_height = available_height - text_input_height - gap_between
 
-  -- Split width: 60% tree, 40% selection
-  local tree_width = math.floor(available_width * 0.6)
-  local selection_width = available_width - tree_width - 1 -- -1 for separator
+  -- Split width: 55% tree, 45% selection for better balance
+  local tree_width = math.floor(available_width * 0.55)
+  local selection_width = available_width - tree_width - 2 -- Account for borders
 
   return {
     width = available_width,
@@ -57,6 +141,7 @@ local function calculate_layout()
     selection_width = selection_width,
     tree_height = tree_height,
     text_input_height = text_input_height,
+    gap_between = gap_between,
   }
 end
 
@@ -81,6 +166,9 @@ local function create_buffers()
   state.buffers.tree = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_option(state.buffers.tree, 'bufhidden', 'wipe')
   vim.api.nvim_buf_set_option(state.buffers.tree, 'filetype', 'prompt-tower-tree')
+  vim.api.nvim_buf_set_option(state.buffers.tree, 'buftype', 'nofile')
+  vim.api.nvim_buf_set_option(state.buffers.tree, 'buflisted', false)
+  vim.api.nvim_buf_set_option(state.buffers.tree, 'swapfile', false)
 
   -- Selection buffer
   state.buffers.selection = vim.api.nvim_create_buf(false, true)
@@ -118,37 +206,48 @@ local function create_windows()
 
   -- Tree window (left side)
   state.windows.tree = create_float_win(state.buffers.tree, {
-    row = 1,
-    col = 1,
+    row = 2,
+    col = 2,
     width = layout.tree_width,
     height = layout.tree_height,
     title = ' File Tree ',
   })
 
+  -- Set tree window options (adapted from lir.nvim)
+  vim.api.nvim_win_set_option(state.windows.tree, 'wrap', false)
+  vim.api.nvim_win_set_option(state.windows.tree, 'cursorline', true)
+  vim.api.nvim_win_set_option(state.windows.tree, 'number', false)
+  vim.api.nvim_win_set_option(state.windows.tree, 'relativenumber', false)
+  vim.api.nvim_win_set_option(state.windows.tree, 'signcolumn', 'no')
+
   -- Selection window (right side)
   state.windows.selection = create_float_win(state.buffers.selection, {
-    row = 1,
-    col = layout.tree_width + 2,
+    row = 2,
+    col = layout.tree_width + 4,
     width = layout.selection_width,
     height = layout.tree_height,
     title = ' Selected Files ',
   })
 
-  -- Top text window
+  -- Calculate text input positioning to align with tree/selection divider
+  local text_start_row = layout.tree_height + layout.gap_between + 2
+  local center_divider = layout.tree_width + 4 -- Same as selection window column
+
+  -- Top text window (left bottom) - matches tree width
   state.windows.top_text = create_float_win(state.buffers.top_text, {
-    row = layout.tree_height + 2,
-    col = 1,
-    width = math.floor(layout.width / 2) - 1,
-    height = 3,
+    row = text_start_row,
+    col = 2,
+    width = layout.tree_width,
+    height = layout.text_input_height,
     title = ' Context (Top) ',
   })
 
-  -- Bottom text window
+  -- Bottom text window (right bottom) - matches selection width
   state.windows.bottom_text = create_float_win(state.buffers.bottom_text, {
-    row = layout.tree_height + 2,
-    col = math.floor(layout.width / 2) + 1,
-    width = layout.width - math.floor(layout.width / 2),
-    height = 3,
+    row = text_start_row,
+    col = center_divider,
+    width = layout.selection_width,
+    height = layout.text_input_height,
     title = ' Context (Bottom) ',
   })
 end
@@ -201,6 +300,9 @@ function M.open()
 
   -- Scan workspace if needed
   workspace.scan_workspace(current_workspace)
+
+  -- Setup devicons
+  setup_devicons()
 
   create_buffers()
   create_windows()
@@ -267,20 +369,18 @@ function M.refresh_tree()
   state.tree_lines = {}
   state.current_tree_node = file_tree
 
-  -- Build tree display lines
+  -- Build tree display lines with enhanced icons
   local function build_tree_lines(node, depth, is_last, prefix)
     depth = depth or 0
     is_last = is_last or true
     prefix = prefix or ''
 
     if depth > 0 then -- Skip root node in display
-      local icon = ''
+      local icon, icon_highlight = get_file_icon(node.name, node:is_directory())
       local selected_mark = ''
 
-      if node:is_directory() then
-        icon = node.expanded and '📂' or '📁'
-      else
-        icon = '📄'
+      -- For files, show selection status
+      if not node:is_directory() then
         selected_mark = workspace.is_file_selected(node.path) and ' ✓' or ''
       end
 
@@ -290,7 +390,9 @@ function M.refresh_tree()
       end
 
       local display_name = node.name .. selected_mark
-      local line = line_prefix .. icon .. ' ' .. display_name
+      -- Add spacing like lir.nvim (adapted from lir's readdir function)
+      local prefix_space = ' ' -- Space for better cursor appearance
+      local line = prefix_space .. line_prefix .. icon .. ' ' .. display_name
 
       table.insert(state.tree_lines, {
         text = line,
@@ -298,6 +400,8 @@ function M.refresh_tree()
         depth = depth,
         is_directory = node:is_directory(),
         is_selected = workspace.is_file_selected(node.path),
+        icon = icon,
+        icon_highlight = icon_highlight,
       })
     end
 
@@ -327,6 +431,9 @@ function M.refresh_tree()
   end
 
   vim.api.nvim_buf_set_lines(state.buffers.tree, 0, -1, false, display_lines)
+
+  -- Apply icon highlighting
+  update_tree_highlights(state.tree_lines)
 
   -- Ensure cursor is in bounds
   if state.cursor_line > #state.tree_lines then
@@ -361,7 +468,8 @@ function M.refresh_selection()
 
     for _, node in ipairs(selected_files) do
       local display_path = current_workspace and node:get_relative_path(current_workspace) or node.path
-      table.insert(display_lines, '📄 ' .. display_path)
+      local icon, _ = get_file_icon(node.name, false)
+      table.insert(display_lines, icon .. ' ' .. display_path)
     end
 
     table.insert(display_lines, '')
