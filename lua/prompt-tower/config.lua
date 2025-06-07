@@ -23,9 +23,9 @@ local defaults = {
   },
   use_gitignore = true, -- Respect .gitignore files for ignore patterns
   use_towerignore = true, -- Respect .towerignore files for custom ignore patterns
-  max_file_size_kb = 500, -- 500KB limit (matches VSCode default)
+  max_file_size_kb = 500, -- 500KB limit
 
-  -- Context generation settings (matches VSCode structure)
+  -- Context generation settings
   output_format = {
     -- Individual file block template
     block_template = '<file name="{fileNameWithExtension}" path="{rawFilePath}">\n{fileContent}\n</file>',

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-prompt-tower.nvim is a Neovim plugin for creating AI-ready context from codebases. It allows users to select files and generate structured prompts for AI assistants, inspired by the VSCode Prompt Tower extension.
+prompt-tower.nvim is a Neovim plugin for creating AI-ready context from codebases. It allows users to select files and generate structured prompts for AI assistants.
 
 ## Development Commands
 

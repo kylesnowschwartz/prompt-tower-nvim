@@ -1,6 +1,6 @@
 # prompt-tower.nvim
 
-A Neovim plugin for creating AI-ready context from your codebase. Inspired by the VSCode Prompt Tower extension.
+A Neovim plugin for creating AI-ready context from your codebase.
 
 ## Features
 
@@ -97,23 +97,14 @@ require('prompt-tower').setup({
   },
   use_gitignore = true,
   use_towerignore = true,
-  max_file_size_kb = 500, -- 500KB limit (matches VSCode default)
+  max_file_size_kb = 500, -- 500KB limit
 
   -- Output format settings with template presets
   output_format = {
     -- Default template format
     default_format = 'xml', -- Options: 'xml', 'markdown', 'minimal'
 
-    -- New format structure (recommended)
-    block_template = '<file name="{fileNameWithExtension}" path="{rawFilePath}">\\n{fileContent}\\n</file>',
-    block_separator = '\\n',
-    block_trim_lines = true,
-
-    wrapper_format = {
-      template = '<context>\\n{githubIssues}{treeBlock}<project_files>\\n{blocks}\\n</project_files>\\n</context>',
-    },
-
-    -- Template presets
+    -- Template presets for different output formats
     presets = {
       xml = {
         block_template = '<file name="{fileNameWithExtension}" path="{rawFilePath}">\\n{fileContent}\\n</file>',
@@ -254,6 +245,5 @@ MIT License - see LICENSE file for details.
 
 ## Acknowledgments
 
-- Inspired by [Prompt Tower VSCode Extension](https://github.com/backnotprop/prompt-tower)
-- Built with [plenary.nvim](https://github.com/nvim-lua/plenary.nvim)
+- Inspired by [Prompt Tower Extension](https://github.com/backnotprop/prompt-tower)
 - Follows [Neovim plugin development best practices](https://github.com/nanotee/nvim-lua-guide)

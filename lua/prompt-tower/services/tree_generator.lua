@@ -21,29 +21,29 @@ local TREE_CHARS = {
   EMPTY_SPACE = '   ',
 }
 
--- Convert bytes to human-readable string (matches VSCode implementation)
+-- Convert bytes to human-readable string
 local function format_file_size(bytes)
   if not bytes then
     return nil
   end
 
-  -- Handle 0 byte files (VSCode shows [0 KB])
+  -- Handle 0 byte files
   if bytes == 0 then
     return '0 KB'
   end
 
   local size, unit
   if bytes > 1048576 then
-    -- Use 10485.76 for exact VSCode compatibility (1024*1024/100)
+    -- Convert to MB (1024*1024/100)
     size = math.floor(bytes / 10485.76 + 0.5) / 100 -- Manual rounding since Lua lacks math.round
     unit = 'MB'
   else
-    -- Use 10.24 for exact VSCode compatibility (1024/100)
+    -- Convert to KB (1024/100)
     size = math.floor(bytes / 10.24 + 0.5) / 100 -- Manual rounding since Lua lacks math.round
     unit = 'KB'
   end
 
-  -- VSCode uses no decimal places for display
+  -- Use no decimal places for display
   return string.format('%.0f %s', size, unit)
 end
 
@@ -88,7 +88,7 @@ local function generate_tree_line(node, prefix, is_last, show_file_size, base_pa
     end
   end
 
-  -- Add directory info if it's a directory (matches VSCode format exactly)
+  -- Add directory info if it's a directory
   if node:is_directory() then
     local stats = calculate_directory_stats(node)
     local file_text = stats.file_count == 1 and 'file' or 'files'
