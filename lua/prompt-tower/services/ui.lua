@@ -320,6 +320,19 @@ local function setup_keymaps()
   map(state.buffers.bottom_text, 'n', '<C-g>', M.generate_prompt, 'Generate prompt')
 end
 
+--- Set window options for text input windows to disable line numbers
+--- @param window_name string The name of the window (top_text or bottom_text)
+local function set_text_window_options(window_name)
+  if window_name == 'top_text' or window_name == 'bottom_text' then
+    local win = state.windows[window_name]
+    if win and vim.api.nvim_win_is_valid(win) then
+      vim.api.nvim_win_set_option(win, 'number', false)
+      vim.api.nvim_win_set_option(win, 'relativenumber', false)
+      vim.api.nvim_win_set_option(win, 'signcolumn', 'no')
+    end
+  end
+end
+
 --- Open the UI interface
 function M.open()
   if state.is_open then
@@ -815,19 +828,6 @@ function M.show_help()
     end,
     once = true,
   })
-end
-
---- Set window options for text input windows to disable line numbers
---- @param window_name string The name of the window (top_text or bottom_text)
-local function set_text_window_options(window_name)
-  if window_name == 'top_text' or window_name == 'bottom_text' then
-    local win = state.windows[window_name]
-    if win and vim.api.nvim_win_is_valid(win) then
-      vim.api.nvim_win_set_option(win, 'number', false)
-      vim.api.nvim_win_set_option(win, 'relativenumber', false)
-      vim.api.nvim_win_set_option(win, 'signcolumn', 'no')
-    end
-  end
 end
 
 --- Cycle focus between UI windows (Tab functionality)
