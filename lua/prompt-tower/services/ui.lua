@@ -47,9 +47,10 @@ local function setup_devicons()
 
   local folder_icon = devicons.get_icon('lir_folder_icon')
   if folder_icon == nil then
+    -- Use a more common Nerd Font folder icon
     devicons.set_icon({
       lir_folder_icon = {
-        icon = '󰉋',
+        icon = '', -- More standard folder icon
         color = '#7ebae4',
         name = 'LirFolderNode',
       },
@@ -70,14 +71,38 @@ end
 --- @return string icon, string highlight_name
 local function get_file_icon(filename, is_dir)
   if not has_devicons then
-    return is_dir and '📁' or '📄', ''
+    return is_dir and '' or '', ''
   end
 
+  local icon, highlight
+
   if is_dir then
-    return devicons.get_icon('lir_folder_icon', '', { default = true })
+    icon, highlight = devicons.get_icon('lir_folder_icon', '', { default = true })
+    -- Debug: check what devicons returns
+    if not icon or icon == '' then
+      icon = '' -- Fallback to standard folder icon
+    end
   else
-    return devicons.get_icon(filename, string.match(filename, '%a+$'), { default = true })
+    local ext = string.match(filename, '%.([^%.]+)$') or ''
+    icon, highlight = devicons.get_icon(filename, ext, { default = true })
+    -- Debug: check what devicons returns for files
+    if not icon or icon == '' then
+      -- Use different icons for different file types
+      if ext == 'lua' then
+        icon = '󰢱'
+      elseif ext == 'js' then
+        icon = '󰌞'
+      elseif ext == 'sh' then
+        icon = '󰆍'
+      elseif ext == 'rb' then
+        icon = '󰴭'
+      else
+        icon = '󰈔' -- Generic file icon
+      end
+    end
   end
+
+  return icon, highlight or ''
 end
 
 --- Update highlight groups for icons and directories in tree buffer (adapted from lir.nvim)
