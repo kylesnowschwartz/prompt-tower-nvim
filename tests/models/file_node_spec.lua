@@ -94,7 +94,7 @@ describe('FileNode', function()
       local result = node:get_relative_path('/home/user/project')
 
       -- Should return absolute path when not under base
-      assert.is_true(result:match('^/'))
+      assert.is_not_nil(result:match('^/'))
     end)
   end)
 
@@ -338,8 +338,8 @@ describe('FileNode', function()
       local file_str = file_node:to_string()
       local dir_str = dir_node:to_string()
 
-      assert.is_true(file_str:match('%[f%*%]')) -- file, selected
-      assert.is_true(dir_str:match('%[d %]')) -- directory, not selected
+      assert.is_not_nil(file_str:match('%[f%*%]')) -- file, selected
+      assert.is_not_nil(dir_str:match('%[d %]')) -- directory, not selected
     end)
   end)
 end)

@@ -8,6 +8,7 @@ M.version = '0.1.0'
 
 -- Load dependencies
 local config = require('prompt-tower.config')
+local ui = require('prompt-tower.services.ui')
 local workspace = require('prompt-tower.services.workspace')
 
 -- Internal state (now using workspace service)
@@ -45,14 +46,31 @@ end
 
 --- Run a command from the user command interface
 --- @param args string? Command arguments
-function M.run_command(_args)
+function M.run_command(args)
   if not ensure_initialized() then
     vim.notify('Failed to initialize prompt-tower', vim.log.levels.ERROR)
     return
   end
 
-  -- For now, just open a simple selection interface
-  vim.notify('Prompt Tower: Command interface not yet implemented', vim.log.levels.INFO)
+  -- Parse arguments
+  args = args or ''
+  args = args:gsub('^%s*(.-)%s*$', '%1') -- trim whitespace
+
+  if args == '' or args == 'ui' then
+    -- Open the visual UI interface
+    M.open_ui()
+  elseif args == 'select' then
+    -- Select current file (legacy command)
+    M.select_current_file()
+  elseif args == 'generate' then
+    -- Generate context (legacy command)
+    M.generate_context()
+  elseif args == 'clear' then
+    -- Clear selections (legacy command)
+    M.clear_selection()
+  else
+    vim.notify('Unknown command: ' .. args .. '. Use ui, select, generate, or clear.', vim.log.levels.WARN)
+  end
 end
 
 --- Complete command arguments
@@ -60,8 +78,17 @@ end
 --- @param cmd_line string The entire command line
 --- @param cursor_pos number The cursor position in the command line
 --- @return table List of completion candidates
-function M.complete_command(_arg_lead, _cmd_line, _cursor_pos)
-  return {}
+function M.complete_command(arg_lead, _cmd_line, _cursor_pos)
+  local commands = { 'ui', 'select', 'generate', 'clear' }
+  local matches = {}
+
+  for _, cmd in ipairs(commands) do
+    if cmd:sub(1, #arg_lead) == arg_lead then
+      table.insert(matches, cmd)
+    end
+  end
+
+  return matches
 end
 
 --- Add current file to selection
@@ -218,10 +245,37 @@ function M._reset_state()
   workspace._reset_state()
 end
 
+--- Open the visual UI interface
+function M.open_ui()
+  if not ensure_initialized() then
+    vim.notify('Failed to initialize prompt-tower', vim.log.levels.ERROR)
+    return
+  end
+
+  ui.open()
+end
+
+--- Check if UI is open
+--- @return boolean
+function M.is_ui_open()
+  return ui.is_open()
+end
+
+--- Close UI interface
+function M.close_ui()
+  ui.close_ui()
+end
+
 --- Get workspace service for testing
 --- @return table Workspace service
 function M._get_workspace()
   return workspace
+end
+
+--- Get UI service for testing
+--- @return table UI service
+function M._get_ui()
+  return ui
 end
 
 return M

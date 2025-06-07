@@ -96,9 +96,8 @@ describe('prompt-tower.config', function()
     end)
 
     it('should fail with invalid ignore_patterns', function()
-      config.set_value('ignore_patterns', 'not_a_table')
       assert.has_error(function()
-        config.validate()
+        config.set_value('ignore_patterns', 'not_a_table')
       end)
     end)
 

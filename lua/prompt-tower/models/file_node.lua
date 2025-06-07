@@ -35,7 +35,7 @@ function M.new(opts)
     selected = opts.selected or false,
     size = opts.size or (stat and stat.size or 0),
     modified = opts.modified or (stat and stat.mtime.sec or 0),
-    expanded = false, -- For directory tree display
+    expanded = opts.expanded or false, -- For directory tree display
   }
 
   -- Set metatable for methods
@@ -241,6 +241,7 @@ function M:export()
     selected = self.selected,
     size = self.size,
     modified = self.modified,
+    expanded = self.expanded,
     children = vim.tbl_map(function(child)
       return child:export()
     end, self.children),
@@ -262,6 +263,7 @@ function M.from_export(data, parent)
     selected = data.selected,
     size = data.size,
     modified = data.modified,
+    expanded = data.expanded,
   })
 
   -- Reconstruct children

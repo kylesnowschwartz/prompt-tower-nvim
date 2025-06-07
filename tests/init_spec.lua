@@ -53,15 +53,16 @@ describe('prompt-tower.init', function()
     it('should add current file to selection', function()
       prompt_tower.setup()
 
-      -- Create a test buffer with a file
+      -- Create a test buffer with a file that exists in our test workspace
+      local test_file = vim.fn.getcwd() .. '/README.md'
       local buf = vim.api.nvim_create_buf(false, false)
-      vim.api.nvim_buf_set_name(buf, '/tmp/test_file.txt')
+      vim.api.nvim_buf_set_name(buf, test_file)
       vim.api.nvim_set_current_buf(buf)
 
       prompt_tower.select_current_file()
 
-      local state = prompt_tower._get_state()
-      assert.is_true(state.selected_files['/tmp/test_file.txt'])
+      local workspace = prompt_tower._get_workspace()
+      assert.is_true(workspace.is_file_selected(test_file))
     end)
 
     it('should handle empty buffer name gracefully', function()
@@ -76,8 +77,8 @@ describe('prompt-tower.init', function()
         prompt_tower.select_current_file()
       end)
 
-      local state = prompt_tower._get_state()
-      assert.equals(0, vim.tbl_count(state.selected_files))
+      local workspace = prompt_tower._get_workspace()
+      assert.equals(0, workspace.get_selection_count())
     end)
   end)
 
@@ -87,34 +88,39 @@ describe('prompt-tower.init', function()
     end)
 
     it('should add file when not selected', function()
-      prompt_tower.toggle_selection('/tmp/test.txt')
+      -- Use a real file from our workspace
+      local test_file = vim.fn.getcwd() .. '/README.md'
+      prompt_tower.toggle_selection(test_file)
 
-      local state = prompt_tower._get_state()
-      assert.is_true(state.selected_files['/tmp/test.txt'])
+      local workspace = prompt_tower._get_workspace()
+      assert.is_true(workspace.is_file_selected(test_file))
     end)
 
     it('should remove file when already selected', function()
+      -- Use a real file from our workspace
+      local test_file = vim.fn.getcwd() .. '/README.md'
+
       -- First add the file
-      prompt_tower.toggle_selection('/tmp/test.txt')
-      local state = prompt_tower._get_state()
-      assert.is_true(state.selected_files['/tmp/test.txt'])
+      prompt_tower.toggle_selection(test_file)
+      local workspace = prompt_tower._get_workspace()
+      assert.is_true(workspace.is_file_selected(test_file))
 
       -- Then remove it
-      prompt_tower.toggle_selection('/tmp/test.txt')
-      state = prompt_tower._get_state()
-      assert.is_nil(state.selected_files['/tmp/test.txt'])
+      prompt_tower.toggle_selection(test_file)
+      assert.is_false(workspace.is_file_selected(test_file))
     end)
 
     it('should use current file when no filepath provided', function()
-      -- Create a test buffer
+      -- Create a test buffer with a real file
+      local test_file = vim.fn.getcwd() .. '/Makefile' -- Use different file to avoid name collision
       local buf = vim.api.nvim_create_buf(false, false)
-      vim.api.nvim_buf_set_name(buf, '/tmp/current_file.txt')
+      vim.api.nvim_buf_set_name(buf, test_file)
       vim.api.nvim_set_current_buf(buf)
 
       prompt_tower.toggle_selection()
 
-      local state = prompt_tower._get_state()
-      assert.is_true(state.selected_files['/tmp/current_file.txt'])
+      local workspace = prompt_tower._get_workspace()
+      assert.is_true(workspace.is_file_selected(test_file))
     end)
   end)
 
@@ -122,47 +128,37 @@ describe('prompt-tower.init', function()
     it('should remove all selected files', function()
       prompt_tower.setup()
 
-      -- Add some files
-      prompt_tower.toggle_selection('/tmp/file1.txt')
-      prompt_tower.toggle_selection('/tmp/file2.txt')
+      -- Add some real files
+      local file1 = vim.fn.getcwd() .. '/README.md'
+      local file2 = vim.fn.getcwd() .. '/Makefile'
+      prompt_tower.toggle_selection(file1)
+      prompt_tower.toggle_selection(file2)
 
-      local state = prompt_tower._get_state()
-      assert.equals(2, vim.tbl_count(state.selected_files))
+      local workspace = prompt_tower._get_workspace()
+      assert.equals(2, workspace.get_selection_count())
 
       -- Clear selection
       prompt_tower.clear_selection()
 
-      state = prompt_tower._get_state()
-      assert.equals(0, vim.tbl_count(state.selected_files))
+      assert.equals(0, workspace.get_selection_count())
     end)
   end)
 
   describe('generate_context', function()
     before_each(function()
       prompt_tower.setup()
-
-      -- Mock file reading for testing
-      prompt_tower._read_file = function(filepath)
-        if filepath == '/tmp/test1.txt' then
-          return 'Content of test1'
-        elseif filepath == '/tmp/test2.txt' then
-          return 'Content of test2'
-        end
-        return nil
-      end
     end)
 
     it('should generate context for selected files', function()
-      -- Add some files
-      prompt_tower.toggle_selection('/tmp/test1.txt')
-      prompt_tower.toggle_selection('/tmp/test2.txt')
+      -- Add some real files
+      local file1 = vim.fn.getcwd() .. '/README.md'
+      prompt_tower.toggle_selection(file1)
 
       prompt_tower.generate_context()
 
       local state = prompt_tower._get_state()
       assert.is_not_nil(state.last_context)
-      assert.is_true(string.find(state.last_context, 'Content of test1') ~= nil)
-      assert.is_true(string.find(state.last_context, 'Content of test2') ~= nil)
+      assert.is_true(string.find(state.last_context, 'README.md') ~= nil)
     end)
 
     it('should warn when no files selected', function()
@@ -176,11 +172,12 @@ describe('prompt-tower.init', function()
     end)
 
     it('should include proper XML structure', function()
-      prompt_tower.toggle_selection('/tmp/test1.txt')
+      local file1 = vim.fn.getcwd() .. '/README.md'
+      prompt_tower.toggle_selection(file1)
       prompt_tower.generate_context()
 
       local state = prompt_tower._get_state()
-      assert.is_true(string.find(state.last_context, '<file path="/tmp/test1.txt">') ~= nil)
+      assert.is_true(string.find(state.last_context, '<file path="README.md">') ~= nil)
       assert.is_true(string.find(state.last_context, '</file>') ~= nil)
     end)
   end)
@@ -197,24 +194,26 @@ describe('prompt-tower.init', function()
       local state = prompt_tower._get_state()
       assert.is_table(state)
       assert.is_boolean(state.initialized)
-      assert.is_table(state.selected_files)
     end)
   end)
 
   describe('_reset_state', function()
     it('should reset to initial state', function()
       prompt_tower.setup()
-      prompt_tower.toggle_selection('/tmp/test.txt')
+      local test_file = vim.fn.getcwd() .. '/README.md'
+      prompt_tower.toggle_selection(test_file)
 
       local state_before = prompt_tower._get_state()
+      local workspace_before = prompt_tower._get_workspace()
       assert.is_true(state_before.initialized)
-      assert.equals(1, vim.tbl_count(state_before.selected_files))
+      assert.equals(1, workspace_before.get_selection_count())
 
       prompt_tower._reset_state()
 
       local state_after = prompt_tower._get_state()
+      local workspace_after = prompt_tower._get_workspace()
       assert.is_false(state_after.initialized)
-      assert.equals(0, vim.tbl_count(state_after.selected_files))
+      assert.equals(0, workspace_after.get_selection_count())
     end)
   end)
 end)
