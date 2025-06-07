@@ -93,8 +93,11 @@ local function generate_tree_line(node, prefix, is_last, show_file_size, base_pa
     local stats = calculate_directory_stats(node)
     local file_text = stats.file_count == 1 and 'file' or 'files'
 
-    -- Always show directory with / and file count in parentheses
-    line = line .. '/ (' .. stats.file_count .. ' ' .. file_text .. ')'
+    -- Add trailing slash if not already present, then add file count in parentheses
+    if not display_name:match('/$') then
+      line = line .. '/'
+    end
+    line = line .. ' (' .. stats.file_count .. ' ' .. file_text .. ')'
 
     -- Only add size if showFileSize is enabled and we have valid size data
     if show_file_size and stats.total_size > 0 then
