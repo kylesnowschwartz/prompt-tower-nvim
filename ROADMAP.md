@@ -6,7 +6,7 @@
 
 ### ✅ **What's Working Now:**
 - **Professional UI** with NeoTree-inspired interface, tab-cycling between 4 windows, and context-aware help system (`?` key)
-- **Advanced Template System** with full placeholder support ({fileName}, {fileContent}, {projectTree}, etc.) and configurable formats  
+- **Advanced Template System** with full placeholder support ({fileName}, {fileContent}, {projectTree}, etc.) and configurable formats
 - **Project Tree Integration** with VSCode-compatible ASCII trees (├─, └─, │), file sizes, and multiple tree types
 - **Hierarchical File Selection** with directory selection auto-selecting children and visual partial selection indicators
 - **Advanced Ignore Patterns** including .towerignore support, gitignore compatibility, and comprehensive glob pattern matching
@@ -82,7 +82,7 @@ wrapper_template = '<context>\n{treeBlock}<project_files>\n{fileBlocks}\n</proje
 -- All three tree types implemented
 TREE_TYPES = {
   FULL_FILES_AND_DIRECTORIES = 'fullFilesAndDirectories',  -- ✅ Complete structure
-  FULL_DIRECTORIES_ONLY = 'fullDirectoriesOnly',          -- ✅ Directories only  
+  FULL_DIRECTORIES_ONLY = 'fullDirectoriesOnly',          -- ✅ Directories only
   SELECTED_FILES_ONLY = 'selectedFilesOnly'               -- ✅ Selected files in tree format
 }
 
