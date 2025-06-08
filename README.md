@@ -14,6 +14,16 @@ A Neovim plugin for creating AI-ready context from your codebase.
 - ⌨️ **Keyboard-Driven UI**: Intuitive keymaps for efficient file selection
 - 🧪 **Well Tested**: Comprehensive test suite using plenary.nvim
 
+## UI Interface
+
+![Prompt Tower UI](./assets/prompt-tower-ui.png)
+
+The interactive UI provides a comprehensive file selection interface with:
+- **File Tree** (left): Navigate and select files with visual indicators
+- **Selected Files** (right): View and manage your current selection
+- **Context Areas** (bottom): Add custom context before and after your files
+- **Keyboard Navigation**: Full keyboard-driven workflow for efficiency
+
 ## Installation
 
 ### Using [lazy.nvim](https://github.com/folke/lazy.nvim)
