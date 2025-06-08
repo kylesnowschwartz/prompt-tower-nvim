@@ -44,8 +44,8 @@ The plugin follows a layered architecture:
 #### Configuration System (`config.lua`)
 - Centralized configuration with deep merging of user options
 - Built-in validation for all configuration values
-- Supports dot notation for nested config access (`config.get_value('ui.width')`)
-- Default configuration covers ignore patterns, output formatting, UI settings, and clipboard behavior
+- Supports dot notation for nested config access (`config.get_value('clipboard.register')`)
+- Default configuration covers ignore patterns, output formatting, project tree settings, and clipboard behavior
 
 #### Workspace Management (`services/workspace.lua`)
 - Automatically detects project roots using common markers (`.git`, `package.json`, `Makefile`, etc.)
@@ -76,10 +76,11 @@ The plugin follows a layered architecture:
 ## Dependencies
 
 ### Required Runtime Dependencies
-- **plenary.nvim**: Required for file operations and testing framework
 - **Neovim 0.8+**: Minimum version requirement
+- No external runtime dependencies (plugin uses only standard Neovim APIs)
 
 ### Development Dependencies
+- **plenary.nvim**: Required for testing framework only
 - **StyLua**: Lua code formatter (`cargo install stylua`)
 - **Selene**: Lua linter (`cargo install selene`) - configured in `selene.toml`
 - **luac**: Lua syntax checker (usually included with Lua)
@@ -114,6 +115,6 @@ The plugin's core workflow:
 ## Performance Considerations
 
 - File scanning is cached per workspace (refresh with `force_refresh` parameter)
-- Large files are subject to `max_file_size_kb` limit (default 1MB)
+- Large files are subject to `max_file_size_kb` limit (default 500KB)
 - Plugin load time is monitored in test runs (target <100ms)
 - Use lazy loading for services that aren't immediately needed
