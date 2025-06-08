@@ -51,8 +51,8 @@ describe('prompt-tower.config', function()
     end)
 
     it('should return nested values with dot notation', function()
-      local value = config.get_value('ui.title')
-      assert.equals('Prompt Tower', value)
+      local value = config.get_value('clipboard.register')
+      assert.equals('+', value)
     end)
 
     it('should return nil for non-existent keys', function()
@@ -146,12 +146,12 @@ describe('prompt-tower.config', function()
   describe('reset', function()
     it('should restore defaults', function()
       config.set_value('use_gitignore', false)
-      config.set_value('ui.title', 'Modified')
+      config.set_value('clipboard.register', '*')
 
       config.reset()
 
       assert.equals(true, config.get_value('use_gitignore'))
-      assert.equals('Prompt Tower', config.get_value('ui.title'))
+      assert.equals('+', config.get_value('clipboard.register'))
     end)
   end)
 

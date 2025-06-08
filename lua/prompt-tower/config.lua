@@ -81,22 +81,6 @@ local defaults = {
     template = '<project_tree>\n{projectTree}\n</project_tree>\n\n',
   },
 
-  -- Token counting settings (basic estimation for now)
-  token_estimation = {
-    chars_per_token = 4, -- Rough estimation
-    show_warnings = true,
-    warning_threshold = 8000, -- tokens
-  },
-
-  -- UI settings
-  ui = {
-    border = 'rounded',
-    width = 0.8,
-    height = 0.8,
-    title = 'Prompt Tower',
-    show_help = true,
-  },
-
   -- Keymaps
   keymaps = {
     toggle_selection = '<Space>',
