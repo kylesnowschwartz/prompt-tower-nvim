@@ -247,3 +247,4 @@ MIT License - see LICENSE file for details.
 
 - Inspired by [Prompt Tower Extension](https://github.com/backnotprop/prompt-tower)
 - Follows [Neovim plugin development best practices](https://github.com/nanotee/nvim-lua-guide)
+- Built entirely AI-assisted with [Claude Code](https://claude.ai/code) from Anthropic
