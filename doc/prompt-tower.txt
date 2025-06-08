@@ -1,0 +1,381 @@
+*prompt-tower.txt*	AI-ready context generation for Neovim
+
+Author: Kyle Snow Schwartz <https://github.com/kylesnowschwartz>
+License: MIT
+
+==============================================================================
+CONTENTS						*prompt-tower-contents*
+
+    1. Introduction .......................... |prompt-tower-introduction|
+    2. Installation .......................... |prompt-tower-installation|
+    3. Quick Start ........................... |prompt-tower-quickstart|
+    4. Commands .............................. |prompt-tower-commands|
+    5. Configuration ......................... |prompt-tower-configuration|
+    6. Template Formats ...................... |prompt-tower-templates|
+    7. File Ignore Patterns .................. |prompt-tower-ignore|
+    8. Health Check .......................... |prompt-tower-health|
+    9. API Reference ......................... |prompt-tower-api|
+    10. Troubleshooting ...................... |prompt-tower-troubleshooting|
+
+==============================================================================
+1. INTRODUCTION					*prompt-tower-introduction*
+
+prompt-tower.nvim is a Neovim plugin for creating AI-ready context from your
+codebase. It allows you to select files and generate structured prompts for AI
+assistants with configurable templates and output formats.
+
+Key Features:
+- File selection with UI interface or commands
+- Multiple template formats (XML, Markdown, Minimal)
+- Project tree generation
+- Clipboard integration
+- Smart ignore patterns (.gitignore, .towerignore)
+- Workspace detection
+- Keyboard-driven UI
+- Comprehensive test suite
+
+Requirements:
+- Neovim 0.8+
+- Optional: plenary.nvim (for testing only)
+
+==============================================================================
+2. INSTALLATION					*prompt-tower-installation*
+
+Using lazy.nvim: >
+    {
+      'kylesnowschwartz/prompt-tower.nvim',
+      config = function()
+        require('prompt-tower').setup({
+          -- Configuration options (see |prompt-tower-configuration|)
+        })
+      end,
+    }
+<
+
+Using packer.nvim: >
+    use {
+      'kylesnowschwartz/prompt-tower.nvim',
+      config = function()
+        require('prompt-tower').setup()
+      end
+    }
+<
+
+Using vim-plug: >
+    Plug 'kylesnowschwartz/prompt-tower.nvim'
+<
+
+Then add to your init.lua: >
+    require('prompt-tower').setup()
+<
+
+==============================================================================
+3. QUICK START					*prompt-tower-quickstart*
+
+1. Select files for context: >
+    :PromptTowerSelect
+<
+   This adds the current file to your selection.
+
+2. Open the UI to select more files: >
+    :PromptTower
+<
+   Use <Space> to toggle file selection, <Enter> to generate context.
+
+3. Generate and copy context: >
+    :PromptTowerGenerate
+<
+   This generates context from selected files and copies to clipboard.
+
+4. Clear selection: >
+    :PromptTowerClear
+<
+
+==============================================================================
+4. COMMANDS					*prompt-tower-commands*
+
+*:PromptTower* [subcommand]
+    Main command with optional subcommands:
+    - No argument or "ui": Open file selection UI interface
+    - "select": Add current file to selection  
+    - "generate": Generate context from selected files
+    - "clear": Clear all selected files
+    - "format" <name>: Switch template format
+
+*:PromptTowerSelect*
+    Add current file to selection. Equivalent to `:PromptTower select`.
+
+*:PromptTowerGenerate*
+    Generate context from selected files and copy to clipboard.
+    Equivalent to `:PromptTower generate`.
+
+*:PromptTowerClear*
+    Clear all selected files from selection.
+    Equivalent to `:PromptTower clear`.
+
+*:PromptTowerToggle* [file]
+    Toggle file selection. Uses current file if no argument provided.
+    Supports tab completion for file paths.
+
+Examples: >
+    :PromptTower                    " Open UI interface
+    :PromptTower ui                 " Open UI interface
+    :PromptTower select             " Add current file
+    :PromptTower generate           " Generate context
+    :PromptTower clear              " Clear selections
+    :PromptTower format xml         " Switch to XML format
+    :PromptTowerToggle src/main.rs  " Toggle specific file
+<
+
+==============================================================================
+5. CONFIGURATION				*prompt-tower-configuration*
+
+Call |prompt-tower.setup()| with a configuration table. All options are
+optional and will be merged with defaults.
+
+Example configuration: >
+    require('prompt-tower').setup({
+      -- File discovery settings
+      ignore_patterns = {
+        '.git', 'node_modules', '.DS_Store', '*.pyc', '__pycache__',
+        '.pytest_cache', '.venv', 'venv', 'target', 'build', 'dist',
+        '.next', '.nuxt',
+      },
+      use_gitignore = true,      -- Respect .gitignore files
+      use_towerignore = true,    -- Respect .towerignore files
+      max_file_size_kb = 500,    -- File size limit in KB
+      
+      -- Output format settings
+      output_format = {
+        default_format = 'xml',  -- 'xml', 'markdown', 'minimal'
+        presets = {
+          xml = {
+            block_template = '<file name="{fileNameWithExtension}" path="{rawFilePath}">\n{fileContent}\n</file>',
+            separator = '\n\n',
+            wrapper_template = '<!-- Generated by prompt-tower.nvim -->\n{treeBlock}<project_files>\n{fileBlocks}\n</project_files>',
+          },
+          -- See |prompt-tower-templates| for more formats
+        },
+      },
+      
+      -- Project tree settings
+      project_tree = {
+        enabled = true,
+        type = 'fullFilesAndDirectories', -- See |prompt-tower-tree-types|
+        show_file_size = false,
+        template = '<project_tree>\n{projectTree}\n</project_tree>\n\n',
+      },
+      
+      -- UI keymaps
+      keymaps = {
+        toggle_selection = '<Space>',
+        select_all = 'A',
+        clear_all = 'C', 
+        generate_context = '<CR>',
+        quit = 'q',
+        help = '?',
+      },
+      
+      -- Clipboard settings
+      clipboard = {
+        register = '+',           -- System clipboard
+        notify_on_copy = true,
+      },
+    })
+<
+
+					*prompt-tower-tree-types*
+Project tree types:
+- 'fullFilesAndDirectories': Complete directory structure with all files
+- 'fullDirectoriesOnly': Directory structure without individual files
+- 'selectedFilesOnly': Only show selected files in tree format
+- 'none': Disable project tree generation
+
+==============================================================================
+6. TEMPLATE FORMATS				*prompt-tower-templates*
+
+prompt-tower.nvim supports multiple output template formats that can be
+switched on-the-fly:
+
+*prompt-tower-template-xml*
+XML format (default): >
+    <file name="config.lua" path="lua/prompt-tower/config.lua">
+    -- File contents here
+    </file>
+<
+
+*prompt-tower-template-markdown*
+Markdown format: >
+    ## config
+    
+    **Path:** `lua/prompt-tower/config.lua`
+    
+    ```lua
+    -- File contents here
+    ```
+<
+
+*prompt-tower-template-minimal*
+Minimal format: >
+    // File: lua/prompt-tower/config.lua
+    -- File contents here
+<
+
+Switch formats: >
+    :PromptTower format xml
+    :PromptTower format markdown
+    :PromptTower format minimal
+<
+
+					*prompt-tower-template-placeholders*
+Template placeholders:
+- {fileName}: Filename without extension
+- {fileNameWithExtension}: Full filename 
+- {fileExtension}: File extension
+- {rawFilePath}: Workspace-relative path
+- {fullPath}: Absolute file path
+- {fileContent}: File contents
+- {timestamp}: Generation timestamp
+- {fileCount}: Number of selected files
+- {projectTree}: Generated project tree
+- {workspaceRoot}: Current workspace root
+
+==============================================================================
+7. FILE IGNORE PATTERNS			*prompt-tower-ignore*
+
+prompt-tower.nvim supports multiple ways to exclude files:
+
+*prompt-tower-ignore-builtin*
+Built-in patterns are configured in |prompt-tower-configuration|: >
+    ignore_patterns = {
+      '.git', 'node_modules', '.DS_Store', '*.pyc', '__pycache__',
+      '.pytest_cache', '.venv', 'venv', 'target', 'build', 'dist',
+    }
+<
+
+*prompt-tower-ignore-gitignore*
+Respects .gitignore files when `use_gitignore = true` (default).
+
+*prompt-tower-ignore-towerignore*
+Custom .towerignore files when `use_towerignore = true` (default).
+
+Create a .towerignore file in your project root: >
+    # Ignore test outputs
+    test_output.log
+    *.log
+    
+    # Ignore temporary files
+    *.swp
+    *.swo
+    *~
+    
+    # Custom project patterns
+    scratch/
+    temp/
+    docs/archive/
+<
+
+The .towerignore file uses gitignore syntax:
+- Glob patterns: *.log, temp*
+- Directory patterns: node_modules/
+- Negation patterns: !important.log
+- Comments: # This is a comment
+
+==============================================================================
+8. HEALTH CHECK					*prompt-tower-health*
+
+prompt-tower.nvim provides a health check to diagnose installation issues: >
+    :checkhealth prompt-tower
+<
+
+The health check verifies:
+- Neovim version compatibility (0.8+)
+- Clipboard support availability
+- Plugin module loading
+- Workspace detection
+- Template engine functionality
+- User command registration
+
+==============================================================================
+9. API REFERENCE				*prompt-tower-api*
+
+*prompt-tower.setup({opts})*
+    Initialize the plugin with optional configuration.
+    
+    Parameters: ~
+        {opts} (table|nil) Configuration options
+    
+    Returns: ~
+        boolean: true if setup succeeded
+
+*prompt-tower.select_current_file()*
+    Add current buffer file to selection.
+
+*prompt-tower.generate_context()*
+    Generate context from selected files and copy to clipboard.
+
+*prompt-tower.clear_selection()*
+    Clear all selected files.
+
+*prompt-tower.toggle_selection({filepath})*
+    Toggle file selection.
+    
+    Parameters: ~
+        {filepath} (string|nil) File path, defaults to current buffer
+
+*prompt-tower.open_ui()*
+    Open the visual file selection interface.
+
+*prompt-tower.close_ui()*
+    Close the UI interface if open.
+
+*prompt-tower.is_ui_open()*
+    Check if UI interface is currently open.
+    
+    Returns: ~
+        boolean: true if UI is open
+
+*prompt-tower.set_template_format({format})*
+    Switch template format.
+    
+    Parameters: ~
+        {format} (string) Format name: 'xml', 'markdown', 'minimal'
+
+*prompt-tower.show_current_format()*
+    Display current template format and available formats.
+
+==============================================================================
+10. TROUBLESHOOTING				*prompt-tower-troubleshooting*
+
+*prompt-tower-troubleshooting-health*
+Run the health check first: >
+    :checkhealth prompt-tower
+<
+
+*prompt-tower-troubleshooting-common*
+Common issues:
+
+Q: No files appear in the UI
+A: Check that you're in a recognized workspace (directory with .git, 
+   package.json, Makefile, etc.) and files aren't being ignored.
+
+Q: Context generation fails
+A: Ensure files are selected and clipboard is available. Check file
+   size limits in configuration.
+
+Q: UI doesn't open
+A: Verify Neovim version is 0.8+ and plugin is properly installed.
+
+Q: Files are being ignored unexpectedly  
+A: Check .gitignore and .towerignore files. Disable with:
+   use_gitignore = false, use_towerignore = false
+
+*prompt-tower-troubleshooting-debug*
+Debug information: >
+    :lua print(require('prompt-tower.config').export())
+<
+
+Report issues at: https://github.com/kylesnowschwartz/prompt-tower.nvim/issues
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:
