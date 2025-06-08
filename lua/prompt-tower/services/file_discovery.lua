@@ -12,7 +12,8 @@ local M = {}
 --- @param max_depth number Maximum depth to scan
 --- @param ignore_patterns table Ignore patterns to apply
 --- @param opts table Scanning options
-local function _scan_recursive(parent_node, current_depth, max_depth, ignore_patterns, opts)
+--- @param root_path string Root path for relative pattern matching
+local function _scan_recursive(parent_node, current_depth, max_depth, ignore_patterns, opts, root_path)
   if current_depth >= max_depth then
     return
   end
@@ -50,7 +51,7 @@ local function _scan_recursive(parent_node, current_depth, max_depth, ignore_pat
     })
 
     -- Check ignore patterns
-    if M._should_ignore(child_node, ignore_patterns) then
+    if M._should_ignore(child_node, ignore_patterns, root_path) then
       goto continue
     end
 
@@ -67,7 +68,7 @@ local function _scan_recursive(parent_node, current_depth, max_depth, ignore_pat
 
     -- Recursively scan directories
     if child_node:is_directory() then
-      _scan_recursive(child_node, current_depth + 1, max_depth, ignore_patterns, opts)
+      _scan_recursive(child_node, current_depth + 1, max_depth, ignore_patterns, opts, root_path)
     end
 
     ::continue::
@@ -113,7 +114,7 @@ function M.scan_directory(root_path, opts)
   local ignore_patterns = M._load_ignore_patterns(root_path, opts)
 
   -- Scan recursively
-  _scan_recursive(root_node, 0, opts.max_depth, ignore_patterns, opts)
+  _scan_recursive(root_node, 0, opts.max_depth, ignore_patterns, opts, root_node.path)
 
   return root_node
 end
@@ -226,8 +227,9 @@ end
 --- Check if a file node should be ignored
 --- @param node FileNode File node to check
 --- @param patterns table List of ignore patterns
+--- @param root_path? string Root path for gitignore pattern matching
 --- @return boolean True if should be ignored
-function M._should_ignore(node, patterns)
+function M._should_ignore(node, patterns, root_path)
   -- Always ignore .git directories
   if node.name == '.git' and node:is_directory() then
     return true
@@ -235,8 +237,17 @@ function M._should_ignore(node, patterns)
 
   -- Check against patterns
   for _, pattern in ipairs(patterns) do
-    if node.name:match(pattern) or node.path:match(pattern) then
+    -- First check against filename
+    if node.name:match(pattern) then
       return true
+    end
+
+    -- For gitignore patterns, check against relative path from root
+    if root_path then
+      local relative_path = node.path:sub(#root_path + 2) -- Remove root_path + "/"
+      if relative_path and relative_path:match(pattern) then
+        return true
+      end
     end
   end
 

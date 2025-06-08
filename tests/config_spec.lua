@@ -162,4 +162,42 @@ describe('prompt-tower.config', function()
       assert.is_true(string.len(exported) > 0)
     end)
   end)
+
+  describe('file discovery configuration regression tests', function()
+    it('should have include_hidden enabled by default', function()
+      config.setup()
+
+      local include_hidden = config.get_value('file_discovery.include_hidden')
+      assert.equals(true, include_hidden)
+    end)
+
+    it('should have max_depth configured in file_discovery section', function()
+      config.setup()
+
+      local max_depth = config.get_value('file_discovery.max_depth')
+      assert.equals(10, max_depth)
+    end)
+
+    it('should use specific .git pattern that only matches exact .git directory', function()
+      config.setup()
+
+      local ignore_patterns = config.get_value('ignore_patterns')
+      assert.is_true(vim.tbl_contains(ignore_patterns, '^%.git$'))
+
+      -- Should not contain the old broad pattern
+      assert.is_false(vim.tbl_contains(ignore_patterns, '.git'))
+    end)
+
+    it('should allow customization of file_discovery settings', function()
+      config.setup({
+        file_discovery = {
+          include_hidden = false,
+          max_depth = 5,
+        },
+      })
+
+      assert.equals(false, config.get_value('file_discovery.include_hidden'))
+      assert.equals(5, config.get_value('file_discovery.max_depth'))
+    end)
+  end)
 end)

@@ -317,4 +317,187 @@ describe('file_discovery', function()
       end)
     end)
   end)
+
+  describe('hidden files and gitignore pattern regression tests', function()
+    local temp_dir, gitignore_file
+
+    before_each(function()
+      -- Create temporary directory structure that mimics the bug scenario
+      temp_dir = vim.fn.tempname()
+      vim.fn.mkdir(temp_dir, 'p')
+
+      -- Create files that start with dots (hidden files)
+      local hidden_files = {
+        '.gitignore',
+        '.github',
+        '.stylua.toml',
+        '.nvim',
+      }
+
+      local regular_files = {
+        'init.lua',
+        'README.md',
+        'config.json',
+      }
+
+      -- Create hidden files
+      for _, file in ipairs(hidden_files) do
+        local file_path = temp_dir .. '/' .. file
+        if file == '.github' then
+          vim.fn.mkdir(file_path, 'p')
+        else
+          local f = io.open(file_path, 'w')
+          if f then
+            f:write('test content')
+            f:close()
+          end
+        end
+      end
+
+      -- Create regular files
+      for _, file in ipairs(regular_files) do
+        local file_path = temp_dir .. '/' .. file
+        local f = io.open(file_path, 'w')
+        if f then
+          f:write('test content')
+          f:close()
+        end
+      end
+
+      -- Create .gitignore with problematic patterns
+      gitignore_file = temp_dir .. '/.gitignore'
+      local f = io.open(gitignore_file, 'w')
+      if f then
+        -- This pattern should not affect files when the directory path contains 'nvim'
+        f:write('nvim\n')
+        f:write('*.log\n')
+        f:close()
+      end
+    end)
+
+    after_each(function()
+      if temp_dir then
+        vim.fn.delete(temp_dir, 'rf')
+      end
+    end)
+
+    it('should include hidden files when include_hidden is true', function()
+      local opts = {
+        include_hidden = true,
+        respect_gitignore = false, -- Disable gitignore for this test
+        max_depth = 2,
+      }
+
+      local root_node = file_discovery.scan_directory(temp_dir, opts)
+
+      -- Should find hidden files
+      local children_names = vim.tbl_map(function(child)
+        return child.name
+      end, root_node.children)
+
+      assert.is_true(vim.tbl_contains(children_names, '.gitignore'))
+      assert.is_true(vim.tbl_contains(children_names, '.github'))
+      assert.is_true(vim.tbl_contains(children_names, '.stylua.toml'))
+      assert.is_true(vim.tbl_contains(children_names, 'init.lua'))
+      assert.is_true(vim.tbl_contains(children_names, 'README.md'))
+    end)
+
+    it('should exclude hidden files when include_hidden is false', function()
+      local opts = {
+        include_hidden = false,
+        respect_gitignore = false,
+        max_depth = 2,
+      }
+
+      local root_node = file_discovery.scan_directory(temp_dir, opts)
+
+      -- Should not find hidden files
+      local children_names = vim.tbl_map(function(child)
+        return child.name
+      end, root_node.children)
+
+      assert.is_false(vim.tbl_contains(children_names, '.gitignore'))
+      assert.is_false(vim.tbl_contains(children_names, '.github'))
+      assert.is_false(vim.tbl_contains(children_names, '.stylua.toml'))
+
+      -- But should find regular files
+      assert.is_true(vim.tbl_contains(children_names, 'init.lua'))
+      assert.is_true(vim.tbl_contains(children_names, 'README.md'))
+    end)
+
+    it('should properly handle gitignore patterns with relative paths', function()
+      -- Rename temp_dir to contain 'nvim' to test the exact bug scenario
+      local nvim_dir = temp_dir .. '_nvim_config'
+      vim.fn.rename(temp_dir, nvim_dir)
+      temp_dir = nvim_dir -- Update for cleanup
+
+      local opts = {
+        include_hidden = true,
+        respect_gitignore = true,
+        max_depth = 2,
+      }
+
+      local root_node = file_discovery.scan_directory(nvim_dir, opts)
+
+      -- Files should be found despite 'nvim' being in gitignore and directory path
+      local children_names = vim.tbl_map(function(child)
+        return child.name
+      end, root_node.children)
+
+      assert.is_true(vim.tbl_contains(children_names, '.gitignore'))
+      assert.is_true(vim.tbl_contains(children_names, '.github'))
+      assert.is_true(vim.tbl_contains(children_names, 'init.lua'))
+      assert.is_true(vim.tbl_contains(children_names, 'README.md'))
+
+      -- The .nvim file should be ignored by gitignore pattern
+      assert.is_false(vim.tbl_contains(children_names, '.nvim'))
+    end)
+
+    it('should only ignore exact .git directory, not .gitignore or .github', function()
+      -- Create .git directory
+      local git_dir = temp_dir .. '/.git'
+      vim.fn.mkdir(git_dir, 'p')
+
+      local opts = {
+        include_hidden = true,
+        respect_gitignore = false,
+        custom_ignore = { '^%.git$' }, -- Test the fixed pattern
+        max_depth = 2,
+      }
+
+      local root_node = file_discovery.scan_directory(temp_dir, opts)
+
+      local children_names = vim.tbl_map(function(child)
+        return child.name
+      end, root_node.children)
+
+      -- .git directory should be ignored
+      assert.is_false(vim.tbl_contains(children_names, '.git'))
+
+      -- But .gitignore and .github should be included
+      assert.is_true(vim.tbl_contains(children_names, '.gitignore'))
+      assert.is_true(vim.tbl_contains(children_names, '.github'))
+    end)
+
+    it('should not ignore files when old broad .git pattern is not used', function()
+      -- Test that the old pattern '.git' would incorrectly ignore .gitignore and .github
+      local opts = {
+        include_hidden = true,
+        respect_gitignore = false,
+        custom_ignore = { '.git' }, -- Old broad pattern (should be avoided)
+        max_depth = 2,
+      }
+
+      local root_node = file_discovery.scan_directory(temp_dir, opts)
+
+      local children_names = vim.tbl_map(function(child)
+        return child.name
+      end, root_node.children)
+
+      -- With the old broad pattern, these would be incorrectly ignored
+      -- This test documents the problem with the old pattern
+      assert.is_false(vim.tbl_contains(children_names, '.gitignore'))
+      assert.is_false(vim.tbl_contains(children_names, '.github'))
+    end)
+  end)
 end)

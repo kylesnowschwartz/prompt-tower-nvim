@@ -6,8 +6,12 @@ local M = {}
 -- Default configuration
 local defaults = {
   -- File discovery settings
+  file_discovery = {
+    max_depth = 10,
+    include_hidden = true, -- Include hidden files (starting with .)
+  },
   ignore_patterns = {
-    '.git',
+    '^%.git$',
     'node_modules',
     '.DS_Store',
     '*.pyc',

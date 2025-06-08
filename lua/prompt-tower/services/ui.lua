@@ -874,11 +874,27 @@ function M.show_help()
   })
 end
 
+--- Sync current focus index to match the actual current window
+local function sync_current_focus()
+  local current_win = vim.api.nvim_get_current_win()
+  local windows_order = { 'tree', 'selection', 'top_text', 'bottom_text' }
+
+  for i, window_name in ipairs(windows_order) do
+    if state.windows[window_name] == current_win then
+      state.current_focus_index = i
+      return
+    end
+  end
+end
+
 --- Cycle focus between UI windows (Tab functionality)
 function M.cycle_focus()
   if not state.is_open then
     return
   end
+
+  -- Sync current focus to handle cases where focus changed outside of our control
+  sync_current_focus()
 
   -- Define window order: tree -> selection -> top_text -> bottom_text -> repeat
   local windows_order = { 'tree', 'selection', 'top_text', 'bottom_text' }
@@ -904,6 +920,9 @@ function M.cycle_focus_reverse()
   if not state.is_open then
     return
   end
+
+  -- Sync current focus to handle cases where focus changed outside of our control
+  sync_current_focus()
 
   -- Define window order: tree -> selection -> top_text -> bottom_text -> repeat
   local windows_order = { 'tree', 'selection', 'top_text', 'bottom_text' }
