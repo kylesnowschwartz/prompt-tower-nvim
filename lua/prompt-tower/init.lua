@@ -4,11 +4,11 @@
 local M = {}
 
 -- Plugin metadata
-M._VERSION = '0.1.0'
+M._VERSION = '0.1.1'
 M._NAME = 'prompt-tower.nvim'
 
 -- Plugin version for compatibility checks (deprecated, use M._VERSION)
-M.version = '0.1.0'
+M.version = '0.1.1'
 
 -- Lazy load dependencies to improve startup performance
 local function get_config()
