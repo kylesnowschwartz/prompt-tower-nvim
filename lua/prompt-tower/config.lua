@@ -117,6 +117,9 @@ local defaults = {
 -- Current configuration (starts as copy of defaults)
 local current_config = vim.deepcopy(defaults)
 
+-- Initialization state
+local initialized = false
+
 --- Setup configuration with user options
 --- @param opts table? User configuration options
 function M.setup(opts)
@@ -127,6 +130,9 @@ function M.setup(opts)
 
   -- Validate configuration
   M.validate()
+
+  -- Mark as initialized
+  initialized = true
 end
 
 --- Validate current configuration
@@ -343,12 +349,19 @@ end
 --- Reset configuration to defaults
 function M.reset()
   current_config = vim.deepcopy(defaults)
+  initialized = false
 end
 
 --- Export configuration for debugging
 --- @return string Configuration as string
 function M.export()
   return vim.inspect(current_config)
+end
+
+--- Check if plugin has been initialized
+--- @return boolean True if plugin has been set up
+function M.is_initialized()
+  return initialized
 end
 
 return M
