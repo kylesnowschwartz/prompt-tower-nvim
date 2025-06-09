@@ -16,7 +16,9 @@ local function replace_placeholders(template, placeholders)
   for key, value in pairs(placeholders) do
     -- Replace {key} placeholders
     local pattern = '{' .. key .. '}'
-    result = result:gsub(pattern:gsub('([%(%)%.%+%-%*%?%[%]%^%$%%])', '%%%1'), tostring(value or ''))
+    local escaped_pattern = pattern:gsub('([%(%)%.%+%-%*%?%[%]%^%$%%])', '%%%1')
+    local escaped_value = tostring(value or ''):gsub('%%', '%%%%')
+    result = result:gsub(escaped_pattern, escaped_value)
   end
 
   return result
